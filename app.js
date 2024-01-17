@@ -12,6 +12,7 @@ import authRoutes from './routes/authRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
 import productRoutes from './routes/productRoutes.js'
+import promotionRoutes from './routes/promotionRoutes.js'
 
 //db
 mongoose.connect(process.env.MONGODB_URI, {
@@ -39,6 +40,7 @@ app.use('/api', authRoutes)
 app.use('/api', userRoutes)
 app.use('/api', orderRoutes)
 app.use('/api', productRoutes)
+app.use('/api', promotionRoutes)
 app.use(errorHandler)
 
 app.listen(PORT, () => {

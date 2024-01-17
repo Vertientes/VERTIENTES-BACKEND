@@ -35,8 +35,23 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'shipped', 'delivered'],
+        enum: ['pending', 'shipped', 'delivered', 'delivering'],
         default: 'pending'
+    },
+    recargas: {
+        type: Number,
+        trim: true,
+        min: [0, 'Recargas must be at least 1']
+    },
+    promotion: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Promotion',
+        required: false,
+    },
+    cant_a_entregar:{
+        type: Number,
+        trim: true,
+        min: [1, 'Cant a entregar must be at least 1']
     },
     totalAmount: {
         type: Number,
