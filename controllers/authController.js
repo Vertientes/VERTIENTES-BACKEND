@@ -3,11 +3,6 @@ import { ErrorResponse } from '../utils/errorResponse.js'
 
 //registrar usuario
 export const signUp = async (req, res, next) => {
-    const { email } = req.body
-    const userExist = await User.findOne({ email })
-    if (userExist) {
-        return next(new ErrorResponse('E-mail already registred', 400))
-    }
     try {
         const user = await User.create(req.body)
         res.status(201).json({
@@ -21,19 +16,10 @@ export const signUp = async (req, res, next) => {
 
 //ingresar usuario
 export const signIn = async (req, res, next) => {
-    const { email, password } = req.body
-    if (!email) {
-        return next(new ErrorResponse('Please add a e-mail', 403))
-    }
-    if (!password) {
-        return next(new ErrorResponse('Please add a password', 403))
-    }
-
     const user = await User.findOne({ email })
     if (!user) {
         return next(new ErrorResponse('Invalid credentials', 400))
     }
-
     const isMatched = await user.comparePassword(password)
     if (!isMatched) {
         return next(new ErrorResponse('Invalid credentials', 400))
