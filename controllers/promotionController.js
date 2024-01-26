@@ -3,16 +3,16 @@ import { ErrorResponse } from '../utils/errorResponse.js'
 
 export const createPromotion = async (req, res, next) => {
     try {
-        const { description, requiredQuantity, discounted_percentage } = req.body;
-
-        if (!description || !requiredQuantity || !discounted_percentage) {
-            return next(new ErrorResponse('Please complete the fields', 400))
+        const { description, required_quantity, discounted_percentage } = req.body;
+        const file = req.file
+        if (!file) {
+            throw new ErrorResponse('promotion-image cannot be empty', 400)
         }
-
-        const newPromotion = await new Promotion({
+        const newPromotion = new Promotion({
             description,
-            requiredQuantity,
-            discounted_percentage
+            required_quantity,
+            discounted_percentage,
+            img: file.path
         });
 
         const savedPromotion = await newPromotion.save();
@@ -25,6 +25,48 @@ export const createPromotion = async (req, res, next) => {
         next(error);
     }
 };
+
+export const updatePromotion = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { description, required_quantity, discounted_percentage } = req.body;
+        const file = req.file
+        if (file) {
+            const updatedPromotion = await Promotion.findByIdAndUpdate(id, { description, required_quantity, discounted_percentage, img: file.path }, { new: true })
+            res.status(200).json({
+                success: true,
+                updatedPromotion
+            })
+        }
+        else {
+            const promotion = await Promotion.findById(id)
+            const updatedPromotion = await Promotion.findByIdAndUpdate(id, { description, required_quantity, discounted_percentage, img: promotion.img }, { new: true })
+            res.status(200).json({
+                success: true,
+                updatedPromotion
+            })
+        }
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const deletePromotion = async (req, res, next) => {
+    const { id } = req.params
+    try {
+        const deletedPromotion = await Promotion.findByIdAndDelete(id)
+        if(!deletedPromotion){
+            throw new ErrorResponse('Promotion not found', 404)
+        }
+        res.status(200).json({
+            success: true,
+            deletedPromotion
+        })
+    } catch (error) {
+        next(error)
+    }
+}
 
 export const getPromotions = async (req, res, next) => {
     try {

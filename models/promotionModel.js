@@ -6,7 +6,7 @@ const promotionSchema = new mongoose.Schema({
         required: [true, 'Please add a name'],
         min: [1, 'Recargas must be at least 1']
     },
-    requiredQuantity: {
+    required_quantity: {
         type: Number,
         required: [true, 'Please add required quantity'],
         min: [1, 'Recargas must be at least 1']
@@ -16,6 +16,10 @@ const promotionSchema = new mongoose.Schema({
         required: [true, 'Please add discounted percentage'],
         min: [1, 'Recargas must be at least 1']
     },
+    img: {
+        type: String,
+        required: [true, 'Url img is required'],
+    }
 }, { timestamps: true });
 
 export default mongoose.model('Promotion', promotionSchema);

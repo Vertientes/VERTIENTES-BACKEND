@@ -6,34 +6,26 @@ import cors from 'cors'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 import { errorHandler } from './middlewares/error.js'
-
+import { ErrorResponse } from './utils/errorResponse.js'
 //import routes
 import authRoutes from './routes/authRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
 import productRoutes from './routes/productRoutes.js'
 import promotionRoutes from './routes/promotionRoutes.js'
+import { dbConnect } from './utils/dbConnect.js'
+
 
 //db
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-}).then(() => console.log('MongoDB Connect on:', mongoose.connection.host))
-    .catch((err) => console.log(err))
-
+dbConnect()
 
 const app = express()
 const PORT = process.env.PORT
 
 app.use(cors())
 app.use(morgan('dev'))
-app.use(bodyParser.json({ limit: '5mb' }))
-app.use(bodyParser.urlencoded({
-    limit: '5mb',
-    extended: true
-}))
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
 app.use('/api', authRoutes)

@@ -33,25 +33,47 @@ const orderSchema = new mongoose.Schema({
             maxlength: 10
         }
     },
+    payment_method: {
+        type: String,
+        enum: ['Transferencia', 'Efectivo'],
+        required: [true, 'Payment method is required']
+    },
+    extra_payment: {
+        type: Number,
+        required: [true, 'Extra payment is required'],
+        default: 0 
+    },
+    payment_date: {
+        type: String,
+        required: [true, 'Payment date is required']
+    },
+    payment_due_date: {
+        type: String,
+        required: [true, 'Payment due date is required']
+    },
+    vitits:[{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Visit'
+    }],
     status: {
         type: String,
         enum: ['pending', 'shipped', 'delivered', 'delivering'],
         default: 'pending'
     },
-    recargas: {
+    refills_in_favor: {
         type: Number,
-        trim: true,
-        min: [0, 'Recargas must be at least 1']
+        required: [true, 'Recharges in favor is required'],
+        default: 0
+    },
+    refills_delivered: {
+        type: Number,
+        required:[true, 'Recharges delivered is required'],
+        default: 0
     },
     promotion: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Promotion',
         required: false,
-    },
-    cant_a_entregar:{
-        type: Number,
-        trim: true,
-        min: [1, 'Cant a entregar must be at least 1']
     },
     totalAmount: {
         type: Number,

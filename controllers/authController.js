@@ -16,6 +16,7 @@ export const signUp = async (req, res, next) => {
 
 //ingresar usuario
 export const signIn = async (req, res, next) => {
+    const { email, password } = req.body
     const user = await User.findOne({ email })
     if (!user) {
         return next(new ErrorResponse('Invalid credentials', 400))
@@ -51,7 +52,7 @@ export const logOut = async (req, res, next) => {
 
 export const userProfile = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id)   
+        const user = await User.findById(req.user.id)
         res.status(200).json({
             success: true,
             user

@@ -15,16 +15,21 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Last name is required'],
         maxlength: 32
     },
-    email: {
+    dni: {
+        type: Number,
+        trim: true,
+        required: [true, 'Dni is required'],
+        maxlength: 8
+    },
+    mobile_phone: {
         type: String,
         trim: true,
-        required: [true, 'E-mail is required'],
-        maxlength: 32,
-        unique: true,
-        match: [
-            /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-            'Please add a valid email'
-        ]
+        required: [true, 'Mobile phone is required'],
+    },
+    balance: {
+        type: Number,
+        required: [true, 'Balance is required'],
+        default: 0
     },
     password: {
         type: String,
@@ -50,11 +55,23 @@ const userSchema = new mongoose.Schema({
             trim: true,
             required: [true, 'House number is required'],
             maxlength: 10
+        },
+        zone: {
+            type: String,
+            trim: true,
+            enum: ['general', 'c5'],
+            required: [true, 'Zone is required']
+        },
+        location: {
+            type: String,
+            required: [true, 'Location is required']
         }
     },
     role: {
-        type: Number,
-        default: 0
+        type: String,
+        enum: ['user', 'admin', 'delivery'],
+        required:[true, 'Role is required'],
+        default: 'user'
     }
 }, { timestamps: true })
 
