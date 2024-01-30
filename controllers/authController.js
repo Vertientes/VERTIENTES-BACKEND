@@ -4,39 +4,52 @@ import { ErrorResponse } from '../utils/errorResponse.js'
 //registrar usuario
 export const signUp = async (req, res, next) => {
     try {
-        const user = await User.create(req.body)
+        const { firstName, lastName, dni, mobile_phone, password } = req.body
+        const newUser = new User({
+            firstName,
+            lastName,
+            dni,
+            mobile_phone,
+            password,
+            address: req.body.address
+        })
+        const user = await newUser.save()
         res.status(201).json({
             success: true,
             user
         })
     } catch (error) {
         next(error)
+        console.error(error)
     }
 }
-
-//ingresar usuario
-export const signIn = async (req, res, next) => {
-    const { email, password } = req.body
-    const user = await User.findOne({ email })
-    if (!user) {
-        return next(new ErrorResponse('Invalid credentials', 400))
-    }
-    const isMatched = await user.comparePassword(password)
-    if (!isMatched) {
-        return next(new ErrorResponse('Invalid credentials', 400))
-    }
-
-    sendTokenResponse(user, 200, res)
-}
-
 const sendTokenResponse = async (user, codeStatus, res) => {
     const token = user.getJwtToken()
-    res.status(codeStatus).cookie('token', token, { maxAge: 60 * 60 * 1000, httpOnly: true }).json({
+    res.status(codeStatus).json({
         success: true,
         token,
         user
     })
 }
+//ingresar usuario
+export const signIn = async (req, res, next) => {
+    const { dni } = req.body
+    console.log(dni)
+    
+    const user = await User.findOne({dni})
+    console.log(user)
+    if (!user) {
+        return next(new ErrorResponse('Invalid credentialssss', 400))
+    }
+/*     const isMatched = await user.comparePassword(password)
+    if (!isMatched) {
+        return next(new ErrorResponse('Invalid credentials', 400))
+    } */
+
+    sendTokenResponse(user, 200, res)
+}
+
+
 
 //log out
 

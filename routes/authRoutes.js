@@ -13,9 +13,9 @@ const router = express.Router()
 
 ///auth route
 //api/signup
-router.post('/signup', /* validateNotEmptyFields(['firstName', 'lastName', 'email', 'password', 'address.*']), validateEmail(), */ validateEmailExists, signUp)
+router.post('/signup', /* validateNotEmptyFields(['firstName', 'lastName', 'email', 'password', 'address.*']), validateEmail(), *//*  validateEmailExists */signUp)
 //api/signin
-router.post('/signin', validateNotEmptyFields(['email', 'password']), validateEmail(),  signIn)
+router.post('/signin',/*  validateNotEmptyFields(['email', 'password']), validateEmail() */  signIn)
 //api/logout
 router.post('/logout', logOut)
 

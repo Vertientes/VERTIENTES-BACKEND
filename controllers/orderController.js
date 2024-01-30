@@ -3,77 +3,51 @@ import User from '../models/userModel.js';
 import Product from '../models/productModel.js';
 import { ErrorResponse } from '../utils/errorResponse.js';
 import Promotion from '../models/promotionModel.js'
-
-//65a8540c8e8b3338c8022ff8 id promocion
-//65a58f6d5f751e3890950236 id producto
+import { getActualDate } from '../utils/getActualDate.js';
+import { getDateAfterOneMonth } from '../utils/getDateAfterOneMonth.js';
 
 export const newOrder = async (req, res, next) => {
     try {
-        const { quantity, productId, promotionId, cant_a_entregar } = req.body
-        const { street, neighborhood, houseNumber } = req.body.deliveryAddress
+        const { quantity, promotion_id, payment_method } = req.body
+        const products_ids = req.body.product_id
+
         // Verifica si el usuario existe
         const user = await User.findById(req.user.id);
         if (!user) {
-            return next(new ErrorResponse('User not found', 400));
+            throw new ErrorResponse('User not found', 404)
         }
-        if (!street || !neighborhood || !houseNumber) {
-            return next(new ErrorResponse('Please add your address', 400))
-        }
-        if (!productId) {
-            return next(new ErrorResponse('Product ID is required', 400));
-        }
-        // Busca el producto por su ID
 
-        const product = await Product.findById(productId);
-        if (!product) {
-            return next(new ErrorResponse('Product not found', 400));
+        const products = await Product.find({ id: products_ids });
+        if (!products) {
+            throw new ErrorResponse('any Product not found', 404)
         }
-        if (promotionId !== "") {
-            const promotion = await Promotion.findById(promotionId)
+        if (promotion_id !== "") {
+            const promotion = await Promotion.findById(promotion_id)
             if (!promotion) {
-                return next(new ErrorResponse('Promotion not found', 400));
+                throw new ErrorResponse('Promotion not found', 404)
             }
 
-            if (promotion.requiredQuantity > quantity) {
-                return next(new ErrorResponse('Promotion is not applicable', 400))
+            if (promotion.required_quantity > quantity) {
+                throw new ErrorResponse('Promotion is not applicable', 400)
             }
+
+
+            //Se calcula el total sin ninguna promocion aplicada
             let totalWithoutDiscount = quantity * product.price;
 
-            // Calculamos el descuento y actualizamos el totalAmount
+            //Se calcula el descuento en base al total sin descuento
             const discountAmount = (totalWithoutDiscount * promotion.discounted_percentage) / 100;
             const totalAmount = totalWithoutDiscount - discountAmount;
 
-            if (cant_a_entregar !== quantity) {
-                // Crea la nueva orden
-                const newOrder = new Order({
-                    user: user.id,
-                    product: product.id,
-                    quantity,
-                    recargas: quantity - cant_a_entregar,
-                    cant_a_entregar,
-                    totalAmount,
-                    promotion: promotionId,
-                    deliveryAddress: req.body.deliveryAddress
-                });
-                const savedOrder = await newOrder.save();
-                const populatedOrder = await Order.findById(savedOrder.id)
-                    .populate('user', '-password')
-                    .populate('product', '-_id')
-                    .populate('promotion', '-_id -requiredQuantity')
-                res.status(201).json({
-                    success: true,
-                    populatedOrder
-                });
-            }
-        }
-        else {
+
             const newOrder = new Order({
                 user: user.id,
                 product: product.id,
                 quantity,
-                recargas: quantity - cant_a_entregar,
-                cant_a_entregar,
-                totalAmount: product.price * quantity,
+                payment_method,
+                payment_date: getActualDate(),
+                payment_due_date: getDateAfterOneMonth(),
+                totalAmount,
                 deliveryAddress: req.body.deliveryAddress
             });
 
@@ -81,7 +55,7 @@ export const newOrder = async (req, res, next) => {
 
             const populatedOrder = await Order.findById(savedOrder.id)
                 .populate('user', '-password')
-                .populate('product', '-_id')
+                .populate('product')
 
             res.status(201).json({
                 success: true,
@@ -94,6 +68,9 @@ export const newOrder = async (req, res, next) => {
         next(error);
     }
 };
+
+
+
 
 export const getOrders = async (req, res, next) => {
     try {

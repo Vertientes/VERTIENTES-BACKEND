@@ -5,33 +5,16 @@ const orderSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    product: {
+    product: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
         required: [true, 'Product is required'],
         min: [1, 'Product must be at least 1']
-    },
+    }],
     quantity: {
         type: Number,
         required: [true, 'Quantity is required'],
         min: [1, 'Quantity must be at least 1']
-    },
-    deliveryAddress: {
-        neighborhood: {
-            type: String,
-            trim: true,
-            maxlength: 50
-        },
-        street: {
-            type: String,
-            trim: true,
-            maxlength: 50
-        },
-        houseNumber: {
-            type: String,
-            trim: true,
-            maxlength: 10
-        }
     },
     payment_method: {
         type: String,
@@ -41,24 +24,25 @@ const orderSchema = new mongoose.Schema({
     extra_payment: {
         type: Number,
         required: [true, 'Extra payment is required'],
-        default: 0 
+        default: 0
     },
-    payment_date: {
+    order_date: {
         type: String,
-        required: [true, 'Payment date is required']
+        required: [true, 'order date is required']
     },
-    payment_due_date: {
+    order_due_date: {
         type: String,
-        required: [true, 'Payment due date is required']
+        required: [true, 'order due date is required']
     },
-    vitits:[{
+    visits: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Visit'
+        ref: 'Visit',
+        deafult: []
     }],
     status: {
         type: String,
-        enum: ['pending', 'shipped', 'delivered', 'delivering'],
-        default: 'pending'
+        enum: ['pendiente', 'completo'],
+        default: 'pendiente'
     },
     refills_in_favor: {
         type: Number,
@@ -67,7 +51,7 @@ const orderSchema = new mongoose.Schema({
     },
     refills_delivered: {
         type: Number,
-        required:[true, 'Recharges delivered is required'],
+        required: [true, 'Recharges delivered is required'],
         default: 0
     },
     promotion: {
