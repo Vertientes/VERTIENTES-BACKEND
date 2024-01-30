@@ -50,6 +50,10 @@ export const updateProduct = async (req, res, next) => {
         const { id } = req.params;
         const { name, price, type, description } = req.body;
         const file = req.file
+        const product = await Product.findById(id)
+        if (!product) {
+            throw new ErrorResponse('Product not found', 404)
+        }
         if (file) {
             const updateProduct = await Product.findByIdAndUpdate(id, { name, price, type, description, img: file.path }, { new: true })
             res.status(200).json({
@@ -75,7 +79,7 @@ export const deleteProduct = async (req, res, next) => {
     const { id } = req.params
     try {
         const deleteProduct = await Product.findByIdAndDelete(id)
-        if(!deleteProduct){
+        if (!deleteProduct) {
             throw new ErrorResponse('Product not found', 404)
         }
         res.status(200).json({

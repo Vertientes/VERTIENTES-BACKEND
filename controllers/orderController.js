@@ -5,27 +5,44 @@ import { ErrorResponse } from '../utils/errorResponse.js';
 import Promotion from '../models/promotionModel.js'
 import { getActualDate } from '../utils/getActualDate.js';
 import { getDateAfterOneMonth } from '../utils/getDateAfterOneMonth.js';
+import { v2 as cloudinary } from 'cloudinary'
 
 export const newOrder = async (req, res, next) => {
     try {
-        const { quantity, promotion_id, payment_method } = req.body
-        const products_ids = req.body.product_id
-        let monto_dispenser = 0
+        const user_orders = await Order.find({ user: req.user.id })
+        user_orders.forEach((user_order) => {
+            if (user_order.status === 'pendiente') {
+                throw new ErrorResponse('You already have an outstanding order.', 400)
+            }
+        })
+
+        const { quantity, promotion_id, payment_method, product_id } = req.body
+        const file = req.file
         let monto_descontado = 0
         let total_bidones_descontado = 0
         let total_bidones_sin_descuento = 0
-        
+        let comprobante = ""
+
+
         // Verifica si el usuario existe
         const user = await User.findById(req.user.id);
         if (!user) {
             throw new ErrorResponse('User not found', 404)
         }
-        const products = await Product.find({ _id: { $in: products_ids } });
+        const product = await Product.findById(product_id);
 
-        if (!products || products.length === 0) {
-            throw new ErrorResponse('No product found or field is empty', 404);
+        if (!product) {
+            throw new ErrorResponse('No product found', 404);
         }
         if (promotion_id !== "") {
+            if (req.file && payment_method === "Transferencia") {
+                comprobante = file.path
+            }
+            else {
+                await cloudinary.uploader.destroy(req.file.filename);
+                comprobante = "No disponible"
+            }
+
             const promotion = await Promotion.findById(promotion_id)
             if (!promotion) {
                 throw new ErrorResponse('Promotion not found', 404)
@@ -35,37 +52,22 @@ export const newOrder = async (req, res, next) => {
                 throw new ErrorResponse('Promotion is not applicable', 400)
             }
 
-
-            //Se calcula el total de los bidones nada mas, ya que el dispenser no aplica ninguna promocion
-
-
-            products.forEach((product) => {
-                if (product.type === 'bidon') {
-                    total_bidones_sin_descuento += product.price * quantity
-                    console.log(total_bidones_sin_descuento)
-                }
-                if (product.type === 'dispenser') {
-                    monto_dispenser = product.price
-                    console.log(monto_dispenser)
-                }
-            })
-
-
             //calculo del descuento aplicado a los bidones
+            const total_bidones_sin_descuento = product.price * quantity
             monto_descontado = (total_bidones_sin_descuento * promotion.discounted_percentage) / 100;
             total_bidones_descontado = total_bidones_sin_descuento - monto_descontado
 
 
             const newOrder = new Order({
                 user: user.id,
-                product: products,
+                product: product_id,
                 promotion: promotion_id,
                 quantity,
                 payment_method,
+                proof_of_payment_image: comprobante,
                 order_date: getActualDate(),
                 order_due_date: getDateAfterOneMonth(),
-                deliveryAddress: req.body.deliveryAddress,
-                totalAmount: total_bidones_descontado + monto_dispenser,
+                total_amount: total_bidones_descontado,
             });
 
             const savedOrder = await newOrder.save();
@@ -83,29 +85,25 @@ export const newOrder = async (req, res, next) => {
 
         }
         else {
-            
-            
-            products.forEach((product) => {
-                if (product.type === 'bidon') {
-                    total_bidones_sin_descuento += product.price * quantity
-                    console.log(total_bidones_sin_descuento)
-                }
-                if (product.type === 'dispenser') {
-                    monto_dispenser = product.price
-                    console.log(monto_dispenser)
-                }
-            })
+            if (req.file && payment_method === "Transferencia") {
+                comprobante = file.path
+            }
+            else {
+                await cloudinary.uploader.destroy(req.file.filename);
+                comprobante = "No disponible"
+            }
 
+            total_bidones_sin_descuento = product.price * quantity
             const newOrder = new Order({
                 user: user.id,
-                product: products,
-                promotion: "No seleccionada",
+                product: product_id,
+                promotion: null,
                 quantity,
                 payment_method,
-                order_date:getActualDate(),
-                order_due_date:getDateAfterOneMonth(),
-                deliveryAddress: req.body.deliveryAddress,
-                totalAmount: total_bidones_sin_descuento + monto_dispenser,
+                proof_of_payment_image: comprobante,
+                order_date: getActualDate(),
+                order_due_date: getDateAfterOneMonth(),
+                total_amount: total_bidones_sin_descuento
             });
 
             const savedOrder = await newOrder.save();
@@ -127,7 +125,49 @@ export const newOrder = async (req, res, next) => {
 };
 
 
+export const getMyOrders = async (req, res, next) => {
+    try {
+        const user_orders = await Order.find({ user: req.user.id });
 
+        // Filtrar las órdenes sin promoción
+        const orders_sin_promocion = user_orders.filter(user_order => user_order.promotion === 'No disponible');
+
+        // Filtrar las órdenes con promoción (ObjectID)
+        const orders_con_promocion = user_orders.filter(user_order => user_order.promotion !== 'No disponible');
+
+        // Hacer el populate solo para las órdenes con promoción
+        const orders_con_promocion_populated = await Order.populate(orders_con_promocion, { path: 'promotion user product' });
+
+        // Hacer el populate para las órdenes sin promoción
+        const orders_sin_promocion_populated = await Order.populate(orders_sin_promocion, { path: 'user product' });
+
+        // Unir las órdenes con promoción poblada y las órdenes sin promoción poblada
+        const all_orders = [...orders_sin_promocion_populated, ...orders_con_promocion_populated];
+
+        res.status(200).json({
+            success: true,
+            orders: all_orders
+        });
+    } catch (error) {
+        console.error(error)
+        next(error);
+    }
+}
+
+
+export const updateOrderData = async (req, res, next) => {
+    const { amount_paid, recharges_delivered, recharges_in_favor } = req.body
+    const { id } = req.params
+    const order = await Order.findById(id)
+    if (!order) {
+        throw new ErrorResponse('Order not found', 404)
+    }
+}
+
+//funcion para que el usuario pida un nuevo servicio
+export const updateOrderForUser = async (req, res, next) => {
+
+}
 
 export const getOrders = async (req, res, next) => {
     try {
@@ -157,4 +197,8 @@ export const changeOrderStatus = async (req, res, next) => {
     } catch (error) {
         next(error)
     }
+}
+
+export const requestRecharge = async (req, res, next) => {
+
 }

@@ -5,12 +5,12 @@ const orderSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    product: [{
+    product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
         required: [true, 'Product is required'],
         min: [1, 'Product must be at least 1']
-    }],
+    },
     quantity: {
         type: Number,
         required: [true, 'Quantity is required'],
@@ -20,6 +20,11 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ['Transferencia', 'Efectivo'],
         required: [true, 'Payment method is required']
+    },
+    amount_paid: {
+        type: Number,
+        required: true,
+        default: 0
     },
     extra_payment: {
         type: Number,
@@ -32,7 +37,14 @@ const orderSchema = new mongoose.Schema({
     },
     order_due_date: {
         type: String,
+
         required: [true, 'order due date is required']
+    },
+    request_recharge: {
+        type: mongoose.Schema.Types.Mixed,
+        ref: 'Request',
+        required: true,
+        default: 'No hay recargas solicitadas'
     },
     visits: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -44,22 +56,26 @@ const orderSchema = new mongoose.Schema({
         enum: ['pendiente', 'completo'],
         default: 'pendiente'
     },
-    refills_in_favor: {
+    recharges_in_favor: {
         type: Number,
         required: [true, 'Recharges in favor is required'],
         default: 0
     },
-    refills_delivered: {
+    recharges_delivered: {
         type: Number,
         required: [true, 'Recharges delivered is required'],
         default: 0
+    },
+    proof_of_payment_image: {
+        type: String,
+        required: false
     },
     promotion: {
         type: mongoose.Schema.Types.Mixed,
         ref: 'Promotion',
         required: false,
     },
-    totalAmount: {
+    total_amount: {
         type: Number,
         required: true
     }
