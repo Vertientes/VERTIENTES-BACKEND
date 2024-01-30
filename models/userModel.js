@@ -67,6 +67,17 @@ const userSchema = new mongoose.Schema({
             required: [true, 'Location is required']
         }
     },
+    is_active: {
+        type: Boolean,
+        required: true,
+        default: true
+    },
+    //bidones que no se devolvieron
+    company_drum:{
+        type: Number,
+        required: true,
+        default: 0
+    },
     role: {
         type: String,
         enum: ['user', 'admin', 'delivery'],

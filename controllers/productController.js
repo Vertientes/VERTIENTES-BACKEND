@@ -59,7 +59,6 @@ export const updateProduct = async (req, res, next) => {
         }
         else {
             const product = await Product.findById(id)
-            console.log(product)
             const updateProduct = await Product.findByIdAndUpdate(id, { name, price, type, description, img: product.img }, { new: true })
             res.status(200).json({
                 success: true,

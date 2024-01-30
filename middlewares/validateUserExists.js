@@ -1,11 +1,11 @@
 import { ErrorResponse } from "../utils/errorResponse.js";
 import User from '../models/userModel.js';
 
-export const validateEmailExists = async (req, res, next) => {
+export const validateUserExists = async (req, res, next) => {
     try {
-        const existingUser = await User.findOne({ email: req.body.email });
+        const existingUser = await User.findOne({ dni: req.body.dni });
         if (existingUser) {
-            return next(new ErrorResponse('E-mail already exists'))
+            return next(new ErrorResponse('User already exists'))
         }
         next()
     } catch (error) {
@@ -14,8 +14,6 @@ export const validateEmailExists = async (req, res, next) => {
 
 
 }
-
-
 
 
 

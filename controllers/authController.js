@@ -33,18 +33,15 @@ const sendTokenResponse = async (user, codeStatus, res) => {
 }
 //ingresar usuario
 export const signIn = async (req, res, next) => {
-    const { dni } = req.body
-    console.log(dni)
-    
+    const { dni, password } = req.body    
     const user = await User.findOne({dni})
-    console.log(user)
     if (!user) {
-        return next(new ErrorResponse('Invalid credentialssss', 400))
+        return next(new ErrorResponse('Invalid credentials', 400))
     }
-/*     const isMatched = await user.comparePassword(password)
+    const isMatched = await user.comparePassword(password)
     if (!isMatched) {
         return next(new ErrorResponse('Invalid credentials', 400))
-    } */
+    }
 
     sendTokenResponse(user, 200, res)
 }

@@ -55,7 +55,7 @@ const orderSchema = new mongoose.Schema({
         default: 0
     },
     promotion: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.Mixed,
         ref: 'Promotion',
         required: false,
     },
