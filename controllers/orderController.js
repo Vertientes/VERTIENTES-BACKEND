@@ -35,9 +35,13 @@ export const newOrder = async (req, res, next) => {
             throw new ErrorResponse('No product found', 404);
         }
         if (promotion_id !== "") {
+            if (!req.file) {
+                comprobante = 'No disponible'
+            }
             if (req.file && payment_method === "Transferencia") {
                 comprobante = file.path
             }
+
             else {
                 await cloudinary.uploader.destroy(req.file.filename);
                 comprobante = "No disponible"
@@ -127,7 +131,7 @@ export const newOrder = async (req, res, next) => {
 
 export const getMyOrders = async (req, res, next) => {
     try {
-        const user_orders = await Order.find({ user: req.user.id });
+        const user_orders = await Order.find({ user: req.user.id })
 
         // Filtrar las órdenes sin promoción
         const orders_sin_promocion = user_orders.filter(user_order => user_order.promotion === 'No disponible');
@@ -136,10 +140,10 @@ export const getMyOrders = async (req, res, next) => {
         const orders_con_promocion = user_orders.filter(user_order => user_order.promotion !== 'No disponible');
 
         // Hacer el populate solo para las órdenes con promoción
-        const orders_con_promocion_populated = await Order.populate(orders_con_promocion, { path: 'promotion user product' });
+        const orders_con_promocion_populated = await Order.populate(orders_con_promocion, { path: 'promotion user product request_recharge' });
 
         // Hacer el populate para las órdenes sin promoción
-        const orders_sin_promocion_populated = await Order.populate(orders_sin_promocion, { path: 'user product' });
+        const orders_sin_promocion_populated = await Order.populate(orders_sin_promocion, { path: 'user product request_recharge' });
 
         // Unir las órdenes con promoción poblada y las órdenes sin promoción poblada
         const all_orders = [...orders_sin_promocion_populated, ...orders_con_promocion_populated];
@@ -154,24 +158,130 @@ export const getMyOrders = async (req, res, next) => {
     }
 }
 
+export const renewOrder = async (req, res, next) => {
+    try {
+        const { quantity, promotion_id, payment_method, product_id } = req.body
+        const file = req.file
+        const { id } = req.params
+        const order = await Order.findById(id)
+        if (!order) {
+            throw new ErrorResponse('Order not found', 404)
+        }
+        const product = await Product.findById(product_id);
 
-export const updateOrderData = async (req, res, next) => {
+        if (!product) {
+            throw new ErrorResponse('No product found', 404);
+        }
+        if (promotion_id !== "") {
+            if (req.file && payment_method === "Transferencia") {
+                comprobante = file.path
+            }
+            else {
+                await cloudinary.uploader.destroy(req.file.filename);
+                comprobante = "No disponible"
+            }
+
+            const promotion = await Promotion.findById(promotion_id)
+            if (!promotion) {
+                throw new ErrorResponse('Promotion not found', 404)
+            }
+
+            if (promotion.required_quantity > quantity) {
+                throw new ErrorResponse('Promotion is not applicable', 400)
+            }
+
+            //calculo del descuento aplicado a los bidones
+            const total_bidones_sin_descuento = product.price * quantity
+            monto_descontado = (total_bidones_sin_descuento * promotion.discounted_percentage) / 100;
+            total_bidones_descontado = total_bidones_sin_descuento - monto_descontado
+
+
+            const newOrder = new Order({
+                user: user.id,
+                product: product_id,
+                promotion: promotion_id,
+                quantity,
+                payment_method,
+                proof_of_payment_image: comprobante,
+                order_date: getActualDate(),
+                order_due_date: getDateAfterOneMonth(),
+                total_amount: total_bidones_descontado,
+            });
+
+            const savedOrder = await newOrder.save();
+
+            const populatedOrder = await Order.findById(savedOrder.id)
+                .populate('user', '-password')
+                .populate('product', '-img')
+                .populate('promotion', '-img')
+
+            res.status(201).json({
+                success: true,
+                populatedOrder
+            });
+
+
+        }
+        else {
+            if (req.file && payment_method === "Transferencia") {
+                comprobante = file.path
+            }
+            else {
+                await cloudinary.uploader.destroy(req.file.filename);
+                comprobante = "No disponible"
+            }
+
+            total_bidones_sin_descuento = product.price * quantity
+            const newOrder = new Order({
+                user: user.id,
+                product: product_id,
+                promotion: null,
+                quantity,
+                payment_method,
+                proof_of_payment_image: comprobante,
+                order_date: getActualDate(),
+                order_due_date: getDateAfterOneMonth(),
+                total_amount: total_bidones_sin_descuento
+            });
+
+            const savedOrder = await newOrder.save();
+
+            const populatedOrder = await Order.findById(savedOrder.id)
+                .populate('user', '-password')
+                .populate('product')
+
+            res.status(201).json({
+                success: true,
+                populatedOrder
+            });
+        }
+    } catch (error) {
+        next(error)
+    }
+
+}
+//funcion para que el delivery modifique la order
+export const updateOrderDataForDelivery = async (req, res, next) => {
     const { amount_paid, recharges_delivered, recharges_in_favor } = req.body
+
     const { id } = req.params
     const order = await Order.findById(id)
+    const user = await User.findById(order.user)
     if (!order) {
         throw new ErrorResponse('Order not found', 404)
     }
+
+    const updatedOrder = await Order.findByIdAndUpdate(id, { amount_paid, recharges_delivered, recharges_in_favor }, { new: true })
+    if (amount_paid > order.total_amount) {
+        order.extra_payment = total_amount - amount_paid
+        await order.save()
+    }
 }
 
-//funcion para que el usuario pida un nuevo servicio
-export const updateOrderForUser = async (req, res, next) => {
-
-}
 
 export const getOrders = async (req, res, next) => {
     try {
-        const orders = await Order.find().populate('user', '-password').populate('product').populate('promotion')
+        const orders = await Order.find().populate('user', '-password').populate('product').populate('promotion').populate('request_recharge').populate('visits')
         res.status(200).json({
             success: true,
             orders

@@ -40,12 +40,12 @@ const orderSchema = new mongoose.Schema({
 
         required: [true, 'order due date is required']
     },
-    request_recharge: {
-        type: mongoose.Schema.Types.Mixed,
+    request_recharge: [{
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Request',
-        required: true,
-        default: 'No hay recargas solicitadas'
-    },
+        default: [],
+        max: 4
+    }],
     visits: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Visit',

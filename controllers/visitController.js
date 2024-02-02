@@ -1,46 +1,56 @@
 import Order from '../models/orderModel.js'
 import { ErrorResponse } from '../utils/errorResponse.js';
 import Visit from '../models/visitModel.js'
+import { getActualDate } from '../utils/getActualDate.js';
 
-export const newVisit = async (req, res, next) => {
+export const createVisit = async (req, res, next) => {
     try {
-        const { order_id, visit_date, quantity_delivered, observation, number_of_visit } = req.body
-        const order = await Order.findById(order_id);
-        if (!order) {
+        const { quantity_delivered, number_of_visit, observation } = req.body;
+        const { id } = req.params
+        const order = await Order.findById(id)
+        if(!order){
             throw new ErrorResponse('Order not found', 404)
         }
-
+        if(order.recharges_in_favor < 0 ){
+            throw new ErrorResponse('This order dont have recharges in favor')
+        }
+        if (order.recharges_delivered >= order.quantity) {
+            throw new ErrorResponse('This order dont have quantity for a visit')
+        }
         const newVisit = new Visit({
             order: order.id,
             number_of_visit,
-            visit_date,
+            visit_date: getActualDate(),
             quantity_delivered,
             observation
-        })
+        });
+        const savedVisit = await newVisit.save();
 
-        const visit = await newVisit.save()
+        order.visits.push(savedVisit.id)
+
+        order.recharges_delivered = order.recharges_delivered + quantity_delivered
+
+        await order.save();
 
         res.status(201).json({
             success: true,
-            visit
-        })
+            savedVisit
+        });
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
 
 export const getVisitsForOrder = async (req, res, next) => {
     try {
-        const {id} = req.params
-
-        const visits = await Visit.find( {order: id} ).populate('order')
-
-
+        const { id } = req.params.id
+        const order = await Order.findById(id)
+        const visits = await Visit.find({ order: order.id })
         res.status(200).json({
             success: true,
             visits
-        })
+        });
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};

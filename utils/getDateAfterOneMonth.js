@@ -16,8 +16,10 @@ export function getDateAfterOneMonth() {
         hours -= 12;
     }
 
+    const formattedHours = hours < 10 ? `0${hours}` : hours;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
     // Formatear la fecha y hora
-    const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}${ampm}`;
+    const formattedDate = `${day}/${month}/${year} ${formattedHours}:${formattedMinutes}${ampm}`;
 
     return formattedDate;
 }

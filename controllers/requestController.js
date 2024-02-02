@@ -3,21 +3,27 @@ import { ErrorResponse } from '../utils/errorResponse.js'
 import { getActualDate } from '../utils/getActualDate.js';
 import Order from '../models/orderModel.js'
 
-export const createRequest = async (req, res, next) => {
+export const createRequestRecharge = async (req, res, next) => {
     try {
         const { requested_recharges } = req.body;
-        const order = await Order.findOne({ user: req.user.id })
-        console.log(order)
+        const order = await Order.findOne({ user: req.user.id, status: 'pendiente' })
         if (order.recharges_in_favor < requested_recharges) {
             throw new ErrorResponse('Recharges in favor is minor')
         }
         const newRequest = new Request({
-            user: req.user.id,
+            order: order.id,
             request_date: getActualDate(),
             requested_recharges
         });
-
         const savedRequest = await newRequest.save();
+
+
+        order.request_recharge.push(savedRequest.id);
+
+        order.recharges_in_favor = order.recharges_in_favor - requested_recharges
+
+        await order.save();
+
         res.status(201).json({
             success: true,
             savedRequest
@@ -46,9 +52,10 @@ export const updateRequest = async (req, res, next) => {
     }
 }
 
-export const getRequests = async (req, res, next) => {
+export const getRequestsForOrder = async (req, res, next) => {
     try {
-        const requests = await Request.find();
+        const order = await Order.findOne({ user: req.user.id, status: 'pendiente' })
+        const requests = await Request.find({ order: order.id })
         res.status(200).json({
             success: true,
             requests

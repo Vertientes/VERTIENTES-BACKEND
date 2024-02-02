@@ -1,9 +1,9 @@
 import mongoose from 'mongoose'
 
 const requestSchema = new mongoose.Schema({
-    user: {
+    order: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Order',
         required: true
     },
     request_date: {
