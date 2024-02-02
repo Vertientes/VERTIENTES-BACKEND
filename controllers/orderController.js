@@ -42,7 +42,7 @@ export const newOrder = async (req, res, next) => {
                 comprobante = file.path
             }
 
-            else {
+            if (req.file && payment_method === "Efectivo") {
                 await cloudinary.uploader.destroy(req.file.filename);
                 comprobante = "No disponible"
             }
