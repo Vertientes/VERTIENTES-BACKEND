@@ -34,18 +34,20 @@ export const newOrder = async (req, res, next) => {
         if (!product) {
             throw new ErrorResponse('No product found', 404);
         }
-        if (promotion_id !== "") {
-            if (!req.file) {
-                comprobante = 'No disponible'
-            }
-            if (req.file && payment_method === "Transferencia") {
-                comprobante = file.path
-            }
+        if (!req.file) {
+            comprobante = 'No disponible'
+        }
+        if (req.file && payment_method === "Transferencia") {
+            comprobante = file.path
+        }
 
-            if (req.file && payment_method === "Efectivo") {
-                await cloudinary.uploader.destroy(req.file.filename);
-                comprobante = "No disponible"
-            }
+        if (req.file && payment_method === "Efectivo") {
+            await cloudinary.uploader.destroy(req.file.filename);
+            comprobante = "No disponible"
+        }
+
+        if (promotion_id !== "") {
+
 
             const promotion = await Promotion.findById(promotion_id)
             if (!promotion) {
@@ -89,14 +91,6 @@ export const newOrder = async (req, res, next) => {
 
         }
         else {
-            if (req.file && payment_method === "Transferencia") {
-                comprobante = file.path
-            }
-            else {
-                await cloudinary.uploader.destroy(req.file.filename);
-                comprobante = "No disponible"
-            }
-
             total_bidones_sin_descuento = product.price * quantity
             const newOrder = new Order({
                 user: user.id,
