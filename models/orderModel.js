@@ -66,13 +66,17 @@ const orderSchema = new mongoose.Schema({
         required: [true, 'Recharges delivered is required'],
         default: 0
     },
-    proof_of_payment_image: {
+    proof_of_payment_image: [{
         type: String,
         required: false
-    },
+    }],
     promotion: {
         type: mongoose.Schema.Types.Mixed,
         ref: 'Promotion',
+        required: false,
+    },
+    observation: {
+        type: String,
         required: false,
     },
     total_amount: {

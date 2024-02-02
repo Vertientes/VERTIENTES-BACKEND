@@ -6,7 +6,7 @@ import { validateNotEmptyFields } from '../middlewares/validateNotEmptyFields.js
 
 const router = express.Router()
 
-router.put('/new_visit/:id', validateNotEmptyFields(['number_of_visit', 'quantity_delivered', 'observation']), verifyJwt, isAdmin, createVisit)
+router.put('/new_visit/:id', validateNotEmptyFields(['number_of_visit', 'quantity_delivered', 'returned_drums', 'observation']), verifyJwt, isAdmin, createVisit)
 router.get('/all_visits_order/:id', verifyJwt, isAdmin, getVisitsForOrder)
 
 export default router

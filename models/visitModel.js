@@ -20,6 +20,10 @@ const visitSchema = new mongoose.Schema({
         required: [true, 'Quantity delivered is required'],
         min: [1, 'Quantity delivered must be at least 1']
     },
+    returned_drums : {
+        type: Number,
+        required: [true, 'Returned drums is required'],
+    },
     observation: {
         type: String,
         required: false

@@ -11,3 +11,7 @@ export const getAllUsers = async (req, res, next) => {
         return next(error)
     }
 }
+
+export const updateCompanyDrum = async (req, res, next) => {
+    const {company_drum} = req.body
+}

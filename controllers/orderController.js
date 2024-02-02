@@ -16,12 +16,13 @@ export const newOrder = async (req, res, next) => {
             }
         })
 
-        const { quantity, promotion_id, payment_method, product_id } = req.body
+        const { quantity, promotion_id, payment_method, product_id, observation } = req.body
         const file = req.file
         let monto_descontado = 0
         let total_bidones_descontado = 0
         let total_bidones_sin_descuento = 0
         let comprobante = ""
+        let user_balance = 0
 
 
         // Verifica si el usuario existe
@@ -44,6 +45,9 @@ export const newOrder = async (req, res, next) => {
         if (req.file && payment_method === "Efectivo") {
             await cloudinary.uploader.destroy(req.file.filename);
             comprobante = "No disponible"
+        }
+        if (user.balance > 0) {
+            user_balance = user.balance
         }
 
         if (promotion_id !== "") {
@@ -73,7 +77,8 @@ export const newOrder = async (req, res, next) => {
                 proof_of_payment_image: comprobante,
                 order_date: getActualDate(),
                 order_due_date: getDateAfterOneMonth(),
-                total_amount: total_bidones_descontado,
+                observation,
+                total_amount: total_bidones_descontado - user_balance,
             });
 
             const savedOrder = await newOrder.save();
@@ -85,7 +90,8 @@ export const newOrder = async (req, res, next) => {
 
             res.status(201).json({
                 success: true,
-                populatedOrder
+                populatedOrder,
+                discounted_quantity: user_balance
             });
 
 
@@ -101,7 +107,8 @@ export const newOrder = async (req, res, next) => {
                 proof_of_payment_image: comprobante,
                 order_date: getActualDate(),
                 order_due_date: getDateAfterOneMonth(),
-                total_amount: total_bidones_sin_descuento
+                observation,
+                total_amount: total_bidones_sin_descuento - user_balance
             });
 
             const savedOrder = await newOrder.save();
@@ -112,7 +119,8 @@ export const newOrder = async (req, res, next) => {
 
             res.status(201).json({
                 success: true,
-                populatedOrder
+                populatedOrder,
+                discounted_quantity: user_balance
             });
         }
 
@@ -154,26 +162,45 @@ export const getMyOrders = async (req, res, next) => {
 
 export const renewOrder = async (req, res, next) => {
     try {
+        const {id} = req.params
         const { quantity, promotion_id, payment_method, product_id } = req.body
         const file = req.file
-        const { id } = req.params
+        let monto_descontado = 0
+        let total_bidones_descontado = 0
+        let total_bidones_sin_descuento = 0
+        let comprobante = ""
+        let user_balance = 0
+        let proof_of_payment_image_array = []
+        //buscar la order la cual se va renovar
         const order = await Order.findById(id)
-        if (!order) {
-            throw new ErrorResponse('Order not found', 404)
-        }
+
+        proof_of_payment_image_array.push(...order.proof_of_payment_image)
+        //buscar el usuario al que le pertenece la order
+        const user = await User.findById(order.user);
+
         const product = await Product.findById(product_id);
 
+    
         if (!product) {
             throw new ErrorResponse('No product found', 404);
         }
+        if (!req.file) {
+            proof_of_payment_image_array.push('No disponible')
+        }
+        if (req.file && payment_method === "Transferencia") {
+            proof_of_payment_image_array.push(file.path)
+        }
+
+        if (req.file && payment_method === "Efectivo") {
+            await cloudinary.uploader.destroy(req.file.filename);
+            proof_of_payment_image_array.push('No disponible')
+        }
+        if (user.balance > 0) {
+            user_balance = user.balance
+        }
+
         if (promotion_id !== "") {
-            if (req.file && payment_method === "Transferencia") {
-                comprobante = file.path
-            }
-            else {
-                await cloudinary.uploader.destroy(req.file.filename);
-                comprobante = "No disponible"
-            }
+
 
             const promotion = await Promotion.findById(promotion_id)
             if (!promotion) {
@@ -189,6 +216,8 @@ export const renewOrder = async (req, res, next) => {
             monto_descontado = (total_bidones_sin_descuento * promotion.discounted_percentage) / 100;
             total_bidones_descontado = total_bidones_sin_descuento - monto_descontado
 
+            
+
 
             const newOrder = new Order({
                 user: user.id,
@@ -196,10 +225,10 @@ export const renewOrder = async (req, res, next) => {
                 promotion: promotion_id,
                 quantity,
                 payment_method,
-                proof_of_payment_image: comprobante,
+                proof_of_payment_image: proof_of_payment_image_array,
                 order_date: getActualDate(),
                 order_due_date: getDateAfterOneMonth(),
-                total_amount: total_bidones_descontado,
+                total_amount: total_bidones_descontado - user_balance,
             });
 
             const savedOrder = await newOrder.save();
@@ -211,20 +240,13 @@ export const renewOrder = async (req, res, next) => {
 
             res.status(201).json({
                 success: true,
-                populatedOrder
+                populatedOrder,
+                discounted_quantity: user_balance
             });
 
 
         }
         else {
-            if (req.file && payment_method === "Transferencia") {
-                comprobante = file.path
-            }
-            else {
-                await cloudinary.uploader.destroy(req.file.filename);
-                comprobante = "No disponible"
-            }
-
             total_bidones_sin_descuento = product.price * quantity
             const newOrder = new Order({
                 user: user.id,
@@ -232,10 +254,10 @@ export const renewOrder = async (req, res, next) => {
                 promotion: null,
                 quantity,
                 payment_method,
-                proof_of_payment_image: comprobante,
+                proof_of_payment_image: proof_of_payment_image_array,
                 order_date: getActualDate(),
                 order_due_date: getDateAfterOneMonth(),
-                total_amount: total_bidones_sin_descuento
+                total_amount: total_bidones_sin_descuento - user_balance
             });
 
             const savedOrder = await newOrder.save();
@@ -246,30 +268,46 @@ export const renewOrder = async (req, res, next) => {
 
             res.status(201).json({
                 success: true,
-                populatedOrder
+                populatedOrder,
+                discounted_quantity: user_balance
             });
         }
+
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+
+//funcion para que el delivery modifique la order
+export const updateOrderDataForDelivery = async (req, res, next) => {
+    try {
+        const { amount_paid, recharges_delivered, recharges_in_favor } = req.body
+        const { id } = req.params
+        const order = await Order.findById(id)
+        const user = await User.findById(order.user)
+        if (!order) {
+            throw new ErrorResponse('Order not found', 404)
+        }
+
+        const updatedOrder = await Order.findByIdAndUpdate(id, { amount_paid, recharges_delivered, recharges_in_favor }, { new: true })
+        if (amount_paid > order.total_amount) {
+            order.extra_payment = total_amount - amount_paid
+
+            await order.save()
+            user.company_drum = recharges_delivered
+            user.balance = order.extra_payment
+            await user.save()
+        }
+        res.status(200).json({
+            success: true,
+            updatedOrder
+        })
     } catch (error) {
         next(error)
     }
 
-}
-//funcion para que el delivery modifique la order
-export const updateOrderDataForDelivery = async (req, res, next) => {
-    const { amount_paid, recharges_delivered, recharges_in_favor } = req.body
-
-    const { id } = req.params
-    const order = await Order.findById(id)
-    const user = await User.findById(order.user)
-    if (!order) {
-        throw new ErrorResponse('Order not found', 404)
-    }
-
-    const updatedOrder = await Order.findByIdAndUpdate(id, { amount_paid, recharges_delivered, recharges_in_favor }, { new: true })
-    if (amount_paid > order.total_amount) {
-        order.extra_payment = total_amount - amount_paid
-        await order.save()
-    }
 }
 
 
