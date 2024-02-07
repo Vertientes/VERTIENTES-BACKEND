@@ -3,18 +3,36 @@ import User from '../models/userModel.js';
 import Product from '../models/productModel.js';
 import { ErrorResponse } from '../utils/errorResponse.js';
 import Promotion from '../models/promotionModel.js'
-import { getActualDate } from '../utils/getActualDate.js';
+import { getCurrentISODate, getDateNextMonthISO, getDateTomorrowISO, getEndTimeOfDay, getStartTimeOfDay } from '../utils/dateUtils.js';
 import { getDateAfterOneMonth } from '../utils/getDateAfterOneMonth.js';
+
 import { v2 as cloudinary } from 'cloudinary'
+
+
+async function contarPedidosDelDia() {
+    return await Order.countDocuments({
+        order_date: {
+            $gte: getStartTimeOfDay(),
+            $lte: getEndTimeOfDay()
+        }
+    });
+}
 
 export const newOrder = async (req, res, next) => {
     try {
-        const user_orders = await Order.find({ user: req.user.id })
+        // Llamar a la función para comenzar a controlar el límite de pedidos
+        let currentDate = getCurrentISODate()
+        const cantPedidosDelDia = await contarPedidosDelDia()
+
+        if(cantPedidosDelDia >= 2) {
+            currentDate = getDateTomorrowISO()
+        }
+        /* const user_orders = await Order.find({ user: req.user.id })
         user_orders.forEach((user_order) => {
             if (user_order.status === 'pendiente') {
                 throw new ErrorResponse('You already have an outstanding order.', 400)
             }
-        })
+        }) */
 
         const { quantity, promotion_id, payment_method, product_id, observation } = req.body
         const file = req.file
@@ -75,8 +93,8 @@ export const newOrder = async (req, res, next) => {
                 quantity,
                 payment_method,
                 proof_of_payment_image: comprobante,
-                order_date: getActualDate(),
-                order_due_date: getDateAfterOneMonth(),
+                order_date: currentDate,
+                order_due_date: getDateNextMonthISO(),
                 observation,
                 total_amount: total_bidones_descontado - user_balance,
             });
@@ -105,8 +123,8 @@ export const newOrder = async (req, res, next) => {
                 quantity,
                 payment_method,
                 proof_of_payment_image: comprobante,
-                order_date: getActualDate(),
-                order_due_date: getDateAfterOneMonth(),
+                order_date: currentDate,
+                order_due_date: getDateNextMonthISO(),
                 observation,
                 total_amount: total_bidones_sin_descuento - user_balance
             });
@@ -123,12 +141,14 @@ export const newOrder = async (req, res, next) => {
                 discounted_quantity: user_balance
             });
         }
+    }
 
-
-    } catch (error) {
+    catch (error) {
         next(error);
     }
-};
+}
+
+
 
 
 export const getMyOrders = async (req, res, next) => {
@@ -162,13 +182,12 @@ export const getMyOrders = async (req, res, next) => {
 
 export const renewOrder = async (req, res, next) => {
     try {
-        const {id} = req.params
+        const { id } = req.params
         const { quantity, promotion_id, payment_method, product_id } = req.body
         const file = req.file
         let monto_descontado = 0
         let total_bidones_descontado = 0
         let total_bidones_sin_descuento = 0
-        let comprobante = ""
         let user_balance = 0
         let proof_of_payment_image_array = []
         //buscar la order la cual se va renovar
@@ -180,7 +199,7 @@ export const renewOrder = async (req, res, next) => {
 
         const product = await Product.findById(product_id);
 
-    
+
         if (!product) {
             throw new ErrorResponse('No product found', 404);
         }
@@ -216,14 +235,14 @@ export const renewOrder = async (req, res, next) => {
             monto_descontado = (total_bidones_sin_descuento * promotion.discounted_percentage) / 100;
             total_bidones_descontado = total_bidones_sin_descuento - monto_descontado
 
-            
+
 
 
             const newOrder = new Order({
                 user: user.id,
                 product: product_id,
                 promotion: promotion_id,
-                quantity,
+                quantity: order.quantity + quantity,
                 payment_method,
                 proof_of_payment_image: proof_of_payment_image_array,
                 order_date: getActualDate(),

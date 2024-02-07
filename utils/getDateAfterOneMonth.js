@@ -11,10 +11,7 @@ export function getDateAfterOneMonth() {
     const minutes = now.getMinutes();
     const ampm = hours >= 12 ? 'pm' : 'am';
 
-    // Convertir las horas al formato de 12 horas
-    if (hours > 12) {
-        hours -= 12;
-    }
+
 
     const formattedHours = hours < 10 ? `0${hours}` : hours;
     const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;

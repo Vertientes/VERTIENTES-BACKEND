@@ -32,11 +32,11 @@ const orderSchema = new mongoose.Schema({
         default: 0
     },
     order_date: {
-        type: String,
+        type: Date,
         required: [true, 'order date is required']
     },
     order_due_date: {
-        type: String,
+        type: Date,
 
         required: [true, 'order due date is required']
     },

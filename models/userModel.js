@@ -78,6 +78,11 @@ const userSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
+    house_img: {
+        type: String,
+        required: false,
+        default: null
+    },
     role: {
         type: String,
         enum: ['user', 'admin', 'delivery'],

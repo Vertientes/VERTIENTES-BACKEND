@@ -1,7 +1,7 @@
 import Order from '../models/orderModel.js'
 import { ErrorResponse } from '../utils/errorResponse.js';
 import Visit from '../models/visitModel.js'
-import { getActualDate } from '../utils/getActualDate.js';
+import { getActualDate } from '../utils/dateUtils.js';
 import User from '../models/userModel.js'
 
 export const createVisit = async (req, res, next) => {

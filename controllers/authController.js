@@ -4,14 +4,15 @@ import { ErrorResponse } from '../utils/errorResponse.js'
 //registrar usuario
 export const signUp = async (req, res, next) => {
     try {
-        const { firstName, lastName, dni, mobile_phone, password } = req.body
+        const { firstName, lastName, dni, mobile_phone, password, role } = req.body
         const newUser = new User({
             firstName,
             lastName,
             dni,
             mobile_phone,
             password,
-            address: req.body.address
+            address: req.body.address,
+            role
         })
         const user = await newUser.save()
         res.status(201).json({
