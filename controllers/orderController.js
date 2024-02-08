@@ -3,13 +3,10 @@ import User from '../models/userModel.js';
 import Product from '../models/productModel.js';
 import { ErrorResponse } from '../utils/errorResponse.js';
 import Promotion from '../models/promotionModel.js'
-import { getCurrentISODate, getDateNextMonthISO, getEndTimeOfDay, getStartTimeOfDay } from '../utils/dateUtils.js';
 import { v2 as cloudinary } from 'cloudinary'
 
 export const newOrder = async (req, res, next) => {
     try {
-
-
         const { quantity, promotion_id, payment_method, product_id, observation, order_date, order_due_date } = req.body
         const file = req.file
         let monto_descontado = 0
@@ -35,13 +32,15 @@ export const newOrder = async (req, res, next) => {
         let pendingDispenserOrderCount = 0;
 
         // Verificar los tipos de pedidos pendientes del usuario
-        user_orders.forEach(userOrder => {
-            if (userOrder.product.type === 'bidon' && userOrder.status === 'pendiente') {
+        user_orders.forEach(async (userOrder) => {
+            const product = await Product.findById(userOrder.product);
+            if (product.type === 'bidon' && userOrder.status === 'pendiente') {
                 pendingBidonOrderCount++;
-            } else if (userOrder.product.type === 'dispenser' && userOrder.status === 'pendiente') {
+            } else if (product.type === 'dispenser' && userOrder.status === 'pendiente') {
                 pendingDispenserOrderCount++;
             }
         })
+        console.log(pendingBidonOrderCount)
         if (product.type === 'bidon') {
             if (pendingBidonOrderCount >= 1) {
                 throw new ErrorResponse('You already have a pending bidon order.', 400);
