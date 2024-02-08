@@ -53,7 +53,7 @@ const orderSchema = new mongoose.Schema({
     }],
     status: {
         type: String,
-        enum: ['pendiente', 'completo'],
+        enum: ['pendiente','en proceso', 'completo'],
         default: 'pendiente'
     },
     recharges_in_favor: {

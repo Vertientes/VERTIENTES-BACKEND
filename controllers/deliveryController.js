@@ -82,7 +82,8 @@ export const updateDeliveryData = async (req, res, next) => {
             user.balance = amount_paid - order.total_amount
             await user.save()
         }
-
+        order.status = 'en proceso',
+        await order.save()
         delivery.status = 'entregado'
         await delivery.save()
 
