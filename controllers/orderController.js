@@ -8,12 +8,7 @@ import { v2 as cloudinary } from 'cloudinary'
 
 export const newOrder = async (req, res, next) => {
     try {
-        const user_orders = await Order.find({ user: req.user.id })
-        user_orders.forEach((user_order) => {
-            if (user_order.status === 'pendiente') {
-                throw new ErrorResponse('You already have an outstanding order.', 400)
-            }
-        })
+
 
         const { quantity, promotion_id, payment_method, product_id, observation, order_date, order_due_date } = req.body
         const file = req.file
@@ -34,6 +29,12 @@ export const newOrder = async (req, res, next) => {
         if (!product) {
             throw new ErrorResponse('No product found', 404);
         }
+        const user_orders = await Order.find({ user: req.user.id })
+        user_orders.forEach((user_order) => {
+            if (user_order.status === 'pendiente' && product.type === 'bidon') {
+                throw new ErrorResponse('You already have an outstanding order.', 400)
+            }
+        })
         if (!req.file) {
             comprobante = 'No disponible'
         }
