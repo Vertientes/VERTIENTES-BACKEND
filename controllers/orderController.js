@@ -30,11 +30,28 @@ export const newOrder = async (req, res, next) => {
             throw new ErrorResponse('No product found', 404);
         }
         const user_orders = await Order.find({ user: req.user.id })
-        user_orders.forEach((user_order) => {
-            if (user_order.status === 'pendiente' && product.type === 'bidon') {
-                throw new ErrorResponse('You already have an outstanding order.', 400)
+        // Contadores para tipos de pedidos pendientes
+        let pendingBidonOrderCount = 0;
+        let pendingDispenserOrderCount = 0;
+
+        // Verificar los tipos de pedidos pendientes del usuario
+        user_orders.forEach(userOrder => {
+            if (userOrder.product.type === 'bidon' && userOrder.status === 'pendiente') {
+                pendingBidonOrderCount++;
+            } else if (userOrder.product.type === 'dispenser' && userOrder.status === 'pendiente') {
+                pendingDispenserOrderCount++;
             }
         })
+        if (product.type === 'bidon') {
+            if (pendingBidonOrderCount >= 1) {
+                throw new ErrorResponse('You already have a pending bidon order.', 400);
+            }
+        } else if (product.type === 'dispenser') {
+            if (pendingDispenserOrderCount >= 1) {
+                throw new ErrorResponse('You already have a pending dispenser order.', 400);
+            }
+        }
+
         if (!req.file) {
             comprobante = 'No disponible'
         }
