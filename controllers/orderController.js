@@ -32,14 +32,14 @@ export const newOrder = async (req, res, next) => {
         let pendingDispenserOrderCount = 0;
 
         // Verificar los tipos de pedidos pendientes del usuario
-        user_orders.forEach(async (userOrder) => {
+        for (const userOrder of user_orders) {
             const product = await Product.findById(userOrder.product);
             if (product.type === 'bidon' && userOrder.status === 'pendiente') {
                 pendingBidonOrderCount++;
             } else if (product.type === 'dispenser' && userOrder.status === 'pendiente') {
                 pendingDispenserOrderCount++;
             }
-        })
+        }
         console.log(pendingBidonOrderCount)
         if (product.type === 'bidon') {
             if (pendingBidonOrderCount >= 1) {
