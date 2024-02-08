@@ -4,29 +4,10 @@ import Product from '../models/productModel.js';
 import { ErrorResponse } from '../utils/errorResponse.js';
 import Promotion from '../models/promotionModel.js'
 import { getCurrentISODate, getDateNextMonthISO, getDateTomorrowISO, getEndTimeOfDay, getStartTimeOfDay } from '../utils/dateUtils.js';
-import { getDateAfterOneMonth } from '../utils/getDateAfterOneMonth.js';
-
 import { v2 as cloudinary } from 'cloudinary'
-
-
-async function contarPedidosDelDia() {
-    return await Order.countDocuments({
-        order_date: {
-            $gte: getStartTimeOfDay(),
-            $lte: getEndTimeOfDay()
-        }
-    });
-}
 
 export const newOrder = async (req, res, next) => {
     try {
-        // Llamar a la función para comenzar a controlar el límite de pedidos
-        let currentDate = getCurrentISODate()
-        const cantPedidosDelDia = await contarPedidosDelDia()
-
-        if(cantPedidosDelDia >= 2) {
-            currentDate = getDateTomorrowISO()
-        }
         /* const user_orders = await Order.find({ user: req.user.id })
         user_orders.forEach((user_order) => {
             if (user_order.status === 'pendiente') {
@@ -34,7 +15,7 @@ export const newOrder = async (req, res, next) => {
             }
         }) */
 
-        const { quantity, promotion_id, payment_method, product_id, observation } = req.body
+        const { quantity, promotion_id, payment_method, product_id, observation, order_date } = req.body
         const file = req.file
         let monto_descontado = 0
         let total_bidones_descontado = 0
@@ -93,7 +74,7 @@ export const newOrder = async (req, res, next) => {
                 quantity,
                 payment_method,
                 proof_of_payment_image: comprobante,
-                order_date: currentDate,
+                order_date,
                 order_due_date: getDateNextMonthISO(),
                 observation,
                 total_amount: total_bidones_descontado - user_balance,
@@ -123,7 +104,7 @@ export const newOrder = async (req, res, next) => {
                 quantity,
                 payment_method,
                 proof_of_payment_image: comprobante,
-                order_date: currentDate,
+                order_date,
                 order_due_date: getDateNextMonthISO(),
                 observation,
                 total_amount: total_bidones_sin_descuento - user_balance

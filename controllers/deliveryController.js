@@ -1,7 +1,7 @@
 import { ErrorResponse } from "../utils/errorResponse.js"
 import Order from '../models/orderModel.js'
 import Delivery from '../models/deliveryModel.js'
-import { getActualDate } from "../utils/dateUtils.js"
+import { getCurrentISODate } from "../utils/dateUtils.js"
 import User from '../models/userModel.js'
 
 export const newDelivery = async (req, res, next) => {
@@ -18,7 +18,7 @@ export const newDelivery = async (req, res, next) => {
 
         const newDelivery = new Delivery({
             order: order.id,
-            delivery_date: getActualDate()
+            delivery_date: getCurrentISODate()
         })
 
         const savedDelivery = await newDelivery.save()

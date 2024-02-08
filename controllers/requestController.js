@@ -1,6 +1,6 @@
 import Request from '../models/requestModel.js'
 import { ErrorResponse } from '../utils/errorResponse.js'
-import { getActualDate } from '../utils/dateUtils.js';
+import { getCurrentISODate } from '../utils/dateUtils.js';
 import Order from '../models/orderModel.js'
 
 export const createRequestRecharge = async (req, res, next) => {
@@ -12,7 +12,7 @@ export const createRequestRecharge = async (req, res, next) => {
         }
         const newRequest = new Request({
             order: order.id,
-            request_date: getActualDate(),
+            request_date: getCurrentISODate(),
             requested_recharges
         });
         const savedRequest = await newRequest.save();

@@ -1,7 +1,7 @@
 import Order from '../models/orderModel.js'
 import { ErrorResponse } from '../utils/errorResponse.js';
 import Visit from '../models/visitModel.js'
-import { getActualDate } from '../utils/dateUtils.js';
+import { getCurrentISODate } from '../utils/dateUtils.js';
 import User from '../models/userModel.js'
 
 export const createVisit = async (req, res, next) => {
@@ -22,7 +22,7 @@ export const createVisit = async (req, res, next) => {
         const newVisit = new Visit({
             order: order.id,
             number_of_visit,
-            visit_date: getActualDate(),
+            visit_date: getCurrentISODate(),
             quantity_delivered,
             returned_drums,
             observation
