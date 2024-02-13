@@ -1,8 +1,8 @@
-import Order from '../models/orderModel.js';
-import User from '../models/userModel.js';
-import Product from '../models/productModel.js';
-import { ErrorResponse } from '../utils/errorResponse.js';
-import Promotion from '../models/promotionModel.js'
+import Order from './orderModel.js';
+import User from '../user/userModel.js';
+import Product from '../products/productModel.js';
+import { ErrorResponse } from '../../utils/errorResponse.js';
+import Promotion from '../promotion/promotionModel.js'
 import { v2 as cloudinary } from 'cloudinary'
 
 export const newOrder = async (req, res, next) => {
@@ -40,7 +40,6 @@ export const newOrder = async (req, res, next) => {
                 pendingDispenserOrderCount++;
             }
         }
-        console.log(pendingBidonOrderCount)
         if (product.type === 'bidon') {
             if (pendingBidonOrderCount >= 1) {
                 throw new ErrorResponse('You already have a pending bidon order.', 400);
@@ -298,9 +297,9 @@ export const renewOrder = async (req, res, next) => {
 
 
 //funcion para que el delivery modifique la order
-export const updateOrderDataForDelivery = async (req, res, next) => {
+export const updateOrderData = async (req, res, next) => {
     try {
-        const { amount_paid, recharges_delivered, recharges_in_favor } = req.body
+        const { order_date, order_due_date, amount_paid, recharges_delivered, recharges_in_favor } = req.body
         const { id } = req.params
         const order = await Order.findById(id)
         const user = await User.findById(order.user)
@@ -308,10 +307,9 @@ export const updateOrderDataForDelivery = async (req, res, next) => {
             throw new ErrorResponse('Order not found', 404)
         }
 
-        const updatedOrder = await Order.findByIdAndUpdate(id, { amount_paid, recharges_delivered, recharges_in_favor }, { new: true })
+        const updatedOrder = await Order.findByIdAndUpdate(id, { amount_paid, recharges_delivered, recharges_in_favor, order_date, order_due_date }, { new: true })
         if (amount_paid > order.total_amount) {
             order.extra_payment = total_amount - amount_paid
-
             await order.save()
             user.company_drum = recharges_delivered
             user.balance = order.extra_payment

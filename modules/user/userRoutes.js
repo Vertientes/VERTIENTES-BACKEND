@@ -1,7 +1,7 @@
 import express from 'express'
-import { verifyJwt } from '../middlewares/verifyJwt.js'
-import { isAdmin } from '../middlewares/isAdmin.js'
-import { getAllUsers } from '../controllers/userController.js'
+import { verifyJwt } from '../../middlewares/verifyJwt.js'
+import { isAdmin } from '../../middlewares/isAdmin.js'
+import { getAllUsers } from './userController.js'
 
 const router = express.Router()
 

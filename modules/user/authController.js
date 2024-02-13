@@ -1,5 +1,5 @@
-import User from '../models/userModel.js'
-import { ErrorResponse } from '../utils/errorResponse.js'
+import User from './userModel.js'
+import { ErrorResponse } from '../../utils/errorResponse.js'
 
 //registrar usuario
 export const signUp = async (req, res, next) => {

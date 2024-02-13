@@ -5,14 +5,14 @@ import cors from 'cors'
 import { errorHandler } from './middlewares/error.js'
 
 //import routes
-import authRoutes from './routes/authRoutes.js'
-import userRoutes from './routes/userRoutes.js'
-import orderRoutes from './routes/orderRoutes.js'
-import productRoutes from './routes/productRoutes.js'
-import promotionRoutes from './routes/promotionRoutes.js'
-import visitRoutes from './routes/visitRoutes.js'
-import requestRoutes from './routes/requestRoutes.js'
-import deliveryRoutes from './routes/deliveryRoutes.js'
+import authRoutes from './modules/user/authRoutes.js'
+import userRoutes from './modules/user/userRoutes.js'
+import orderRoutes from './modules/orders/orderRoutes.js'
+import productRoutes from './modules/products/productRoutes.js'
+import promotionRoutes from './modules/promotion/promotionRoutes.js'
+import visitRoutes from './modules/visits/visitRoutes.js'
+import requestRoutes from './modules/request/requestRoutes.js'
+import deliveryRoutes from './modules/delivery/deliveryRoutes.js'
 import { dbConnect } from './utils/dbConnect.js'
 
 

@@ -1,5 +1,5 @@
 import { ErrorResponse } from "../utils/errorResponse.js";
-import User from '../models/userModel.js'
+import User from '../modules/user/userModel.js'
 import jwt from 'jsonwebtoken'
 
 //funcion para autenticar usuario

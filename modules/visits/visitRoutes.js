@@ -1,8 +1,8 @@
 import express from 'express'
-import { verifyJwt } from '../middlewares/verifyJwt.js'
-import { createVisit, getVisitsForOrder } from '../controllers/visitController.js'
-import { isAdmin } from '../middlewares/isAdmin.js'
-import { validateNotEmptyFields } from '../middlewares/validateNotEmptyFields.js'
+import { verifyJwt } from '../../middlewares/verifyJwt.js'
+import { createVisit, getVisitsForOrder } from './visitController.js'
+import { isAdmin } from '../../middlewares/isAdmin.js'
+import { validateNotEmptyFields } from '../../middlewares/validateNotEmptyFields.js'
 
 const router = express.Router()
 

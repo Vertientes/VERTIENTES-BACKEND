@@ -12,6 +12,11 @@ const deliverySchema = new mongoose.Schema({
         enum: ['pendiente', 'entregado'],
         default: 'pendiente'
     },
+    delivery_zone:{
+        type: String,
+        required: true,
+        enum: ['c5','general']
+    },
     delivery_date: {
         type: String,
         required: [true, 'Please add a delivery date'],

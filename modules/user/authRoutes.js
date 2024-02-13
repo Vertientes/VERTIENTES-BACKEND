@@ -1,8 +1,8 @@
 import express from 'express'
-import { logOut, signIn, signUp, userProfile } from '../controllers/authController.js'
-import { verifyJwt } from '../middlewares/verifyJwt.js'
-import { validateNotEmptyFields } from '../middlewares/validateNotEmptyFields.js'
-import { validateUserExists } from '../middlewares/validateUserExists.js'
+import { logOut, signIn, signUp, userProfile } from './authController.js'
+import { verifyJwt } from '../../middlewares/verifyJwt.js'
+import { validateNotEmptyFields } from '../../middlewares/validateNotEmptyFields.js'
+import { validateUserExists } from '../../middlewares/validateUserExists.js'
 
 const router = express.Router()
 

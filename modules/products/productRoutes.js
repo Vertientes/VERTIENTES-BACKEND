@@ -1,10 +1,10 @@
 import express from 'express'
-import { verifyJwt } from '../middlewares/verifyJwt.js'
-import { deleteProduct, getProducts, newProduct, updateProduct } from '../controllers/productController.js'
-import { isAdmin } from '../middlewares/isAdmin.js'
+import { verifyJwt } from '../../middlewares/verifyJwt.js'
+import { deleteProduct, getProducts, newProduct, updateProduct } from './productController.js'
+import { isAdmin } from '../../middlewares/isAdmin.js'
 import multer from 'multer'
-import { storage } from '../utils/multerStorage.js'
-import { validateNotEmptyFields } from '../middlewares/validateNotEmptyFields.js'
+import { storage } from '../../utils/multerStorage.js'
+import { validateNotEmptyFields } from '../../middlewares/validateNotEmptyFields.js'
 
 const upload = multer({ storage: storage })
 const router = express.Router()

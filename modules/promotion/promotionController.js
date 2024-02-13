@@ -1,5 +1,5 @@
-import Promotion from '../models/promotionModel.js'
-import { ErrorResponse } from '../utils/errorResponse.js'
+import Promotion from './promotionModel.js'
+import { ErrorResponse } from '../../utils/errorResponse.js'
 
 export const createPromotion = async (req, res, next) => {
     try {

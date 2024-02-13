@@ -1,4 +1,4 @@
-import Order from '../models/orderModel.js'
+import Order from '../modules/orders/orderModel.js'
 import { getNextBusinessDayISO, getCurrentISODate } from '../utils/dateUtils.js';
 
 
@@ -26,11 +26,8 @@ export const orderLimiter = async (req, res, next) => {
         while (numberOfOrders >= 59) {
             currentDateISO = getNextBusinessDayISO(currentDateISO);
             numberOfOrders = await countOrdersForDay(currentDateISO);
-            console.log(currentDateISO)
-            console.log(numberOfOrders)
+
         }
-
-
         const orderDate = new Date(currentDateISO);
         const orderDueDate = new Date(orderDate.getFullYear(), orderDate.getMonth() + 1, orderDate.getDate(), orderDate.getHours(), orderDate.getMinutes());
         req.body.order_date = orderDate;

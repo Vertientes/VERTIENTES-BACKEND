@@ -1,14 +1,17 @@
-import { ErrorResponse } from "../utils/errorResponse.js"
-import Order from '../models/orderModel.js'
-import Delivery from '../models/deliveryModel.js'
-import { getCurrentISODate } from "../utils/dateUtils.js"
-import User from '../models/userModel.js'
+import { ErrorResponse } from "../../utils/errorResponse.js"
+import Order from '../orders/orderModel.js'
+import Delivery from './deliveryModel.js'
+import User from '../user/userModel.js'
 
 export const newDelivery = async (req, res, next) => {
-    const { id } = req.params
+
     try {
+        const { id } = req.params
+        const { delivery_date } = req.body
         const order = await Order.findById(id)
         const delivery = await Delivery.findOne({ order: id })
+        const user = await User.findById(order.user)
+        console.log(req.body)
         if (delivery) {
             throw new ErrorResponse('The order has already been added to delivery', 400)
         }
@@ -18,7 +21,8 @@ export const newDelivery = async (req, res, next) => {
 
         const newDelivery = new Delivery({
             order: order.id,
-            delivery_date: getCurrentISODate()
+            delivery_date,
+            delivery_zone: user.address.zone
         })
 
         const savedDelivery = await newDelivery.save()
@@ -54,6 +58,49 @@ export const getDeliveries = async (req, res, next) => {
     }
 };
 
+export const getDeliveriesForC5 = async (req, res, next) => {
+    try {
+        const deliveries = await Delivery.find({delivery_zone: 'c5'}).populate({
+            path: 'order',
+            populate: [
+                { path: 'user' },
+                { path: 'product' },
+                { path: 'promotion' },
+                { path: 'visits' },
+                { path: 'request_recharge' }
+            ]
+        }).sort({ "delivery_date": 1 });
+        res.status(200).json({
+            success: true,
+            deliveries
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getDeliveriesForGeneral = async (req, res, next) => {
+    try {
+        const deliveries = await Delivery.find({delivery_zone: 'general'}).populate({
+            path: 'order',
+            populate: [
+                { path: 'user' },
+                { path: 'product' },
+                { path: 'promotion' },
+                { path: 'visits' },
+                { path: 'request_recharge' }
+            ]
+        }).sort({ "delivery_date": 1 });
+        res.status(200).json({
+            success: true,
+            deliveries
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 export const updateDeliveryData = async (req, res, next) => {
     try {
         const { id } = req.params
@@ -83,7 +130,7 @@ export const updateDeliveryData = async (req, res, next) => {
             await user.save()
         }
         order.status = 'en proceso',
-        await order.save()
+            await order.save()
         delivery.status = 'entregado'
         await delivery.save()
 

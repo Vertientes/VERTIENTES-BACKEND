@@ -1,8 +1,8 @@
-import Order from '../models/orderModel.js'
-import { ErrorResponse } from '../utils/errorResponse.js';
-import Visit from '../models/visitModel.js'
-import { getCurrentISODate } from '../utils/dateUtils.js';
-import User from '../models/userModel.js'
+import Order from '../orders/orderModel.js'
+import { ErrorResponse } from '../../utils/errorResponse.js';
+import Visit from './visitModel.js'
+import { getCurrentISODate } from '../../utils/dateUtils.js';
+import User from '../user/userModel.js'
 
 export const createVisit = async (req, res, next) => {
     try {

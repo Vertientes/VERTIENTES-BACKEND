@@ -1,5 +1,5 @@
-import Product from '../models/productModel.js';
-import { ErrorResponse } from '../utils/errorResponse.js';
+import Product from './productModel.js';
+import { ErrorResponse } from '../../utils/errorResponse.js';
 
 export const newProduct = async (req, res, next) => {
     try {
