@@ -81,11 +81,11 @@ const userSchema = new mongoose.Schema({
     house_img: {
         type: String,
         required: false,
-        default: null
+        default: 'No disponible'
     },
     role: {
         type: String,
-        enum: ['user', 'admin', 'delivery'],
+        enum: ['user', 'admin', 'delivery', 'super_admin'],
         required:[true, 'Role is required'],
         default: 'user'
     }

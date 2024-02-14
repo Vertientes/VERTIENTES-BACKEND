@@ -105,28 +105,23 @@ export const updateDeliveryData = async (req, res, next) => {
     try {
         const { id } = req.params
         const { order_id, amount_paid, recharges_delivered, recharges_in_favor } = req.body
-        const file = req.file
         const delivery = await Delivery.findById(id)
         const order = await Order.findById(order_id)
         const user = await User.findById(order.user)
-        if (file) {
-            user.house_img = file.path
-            await user.save()
-        }
         const updatedOrder = await Order.findByIdAndUpdate(order_id, { amount_paid, recharges_delivered, recharges_in_favor }, { new: true })
         if (amount_paid > order.total_amount) {
-            order.extra_payment = order.total_amount - amount_paid
+            order.extra_payment =  amount_paid - order.total_amount 
 
             await order.save()
             user.company_drum = recharges_delivered
-            user.balance = order.extra_payment
+            user.balance = user.balance + order.extra_payment
             await user.save()
         }
         else {
             order.extra_payment = 0
             await order.save()
             user.company_drum = recharges_delivered
-            user.balance = amount_paid - order.total_amount
+            user.balance = user.balance + amount_paid - order.total_amount
             await user.save()
         }
         order.status = 'en proceso',

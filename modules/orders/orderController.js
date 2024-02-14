@@ -299,22 +299,14 @@ export const renewOrder = async (req, res, next) => {
 //funcion para que el delivery modifique la order
 export const updateOrderData = async (req, res, next) => {
     try {
-        const { order_date, order_due_date, amount_paid, recharges_delivered, recharges_in_favor } = req.body
+        const { order_date, order_due_date, amount_paid, recharges_delivered, recharges_in_favor, observation } = req.body
         const { id } = req.params
         const order = await Order.findById(id)
-        const user = await User.findById(order.user)
         if (!order) {
             throw new ErrorResponse('Order not found', 404)
         }
+        const updatedOrder = await Order.findByIdAndUpdate(id, { amount_paid, recharges_delivered, recharges_in_favor, order_date, order_due_date, observation }, { new: true })
 
-        const updatedOrder = await Order.findByIdAndUpdate(id, { amount_paid, recharges_delivered, recharges_in_favor, order_date, order_due_date }, { new: true })
-        if (amount_paid > order.total_amount) {
-            order.extra_payment = total_amount - amount_paid
-            await order.save()
-            user.company_drum = recharges_delivered
-            user.balance = order.extra_payment
-            await user.save()
-        }
         res.status(200).json({
             success: true,
             updatedOrder
@@ -322,7 +314,6 @@ export const updateOrderData = async (req, res, next) => {
     } catch (error) {
         next(error)
     }
-
 }
 
 
