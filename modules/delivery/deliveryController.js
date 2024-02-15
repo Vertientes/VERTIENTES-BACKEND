@@ -9,17 +9,17 @@ export const newDelivery = async (req, res, next) => {
         const { id } = req.params
         const { delivery_date } = req.body
         const order = await Order.findById(id)
-        
+
         if (!order) {
             throw new ErrorResponse('Order not found', 404)
         }
         const user = await User.findById(order.user)
-        if (order.status === 'en proceso' || order.status === 'completo') {
-            throw new ErrorResponse('The order has already been added to delivery', 400)
+        if (order.status === 'completo' || order.recharges_in_favor <= 0) {
+            throw new ErrorResponse('The order cant add to delivery', 400)
         }
 
         order.status = 'en proceso',
-        await order.save()
+            await order.save()
         const newDelivery = new Delivery({
             order: order.id,
             delivery_date,
@@ -28,7 +28,8 @@ export const newDelivery = async (req, res, next) => {
         })
 
         const savedDelivery = await newDelivery.save()
-
+        order.deliveries.push(savedDelivery.id)
+        await order.save()
         res.status(201).json({
             success: true,
             savedDelivery
@@ -106,10 +107,28 @@ export const getDeliveriesForGeneral = async (req, res, next) => {
 export const updateDeliveryData = async (req, res, next) => {
     try {
         const { id } = req.params
-        const { order_id, amount_paid, recharges_delivered } = req.body
+        const { order_id, amount_paid, recharges_delivered, returned_drums } = req.body
         const delivery = await Delivery.findById(id)
         const order = await Order.findById(order_id)
         const user = await User.findById(order.user)
+        if (order.amount_paid > 0) {
+            amount_paid = order.amount_paid,
+                recharges_delivered = order.recharges_delivered + recharges_delivered
+            order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
+            await order.save()
+            user.company_drum = (user.company_drum - returned_drums) + recharges_delivered
+
+            const updatedOrder = await Order.findByIdAndUpdate(order_id, { amount_paid, recharges_delivered }, { new: true })
+            delivery.status = 'entregado'
+            await delivery.save()
+
+            res.status(200).json({
+                success: true,
+                updatedOrder,
+                delivery
+            })
+        }
+
         const updatedOrder = await Order.findByIdAndUpdate(order_id, { amount_paid, recharges_delivered }, { new: true })
         if (amount_paid > order.total_amount) {
             order.extra_payment = amount_paid - order.total_amount
@@ -127,6 +146,9 @@ export const updateDeliveryData = async (req, res, next) => {
             user.balance = user.balance + amount_paid - order.total_amount
             await user.save()
         }
+
+
+
 
         delivery.status = 'entregado'
         await delivery.save()

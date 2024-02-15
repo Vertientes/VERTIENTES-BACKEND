@@ -319,7 +319,7 @@ export const updateOrderData = async (req, res, next) => {
 
 export const getOrders = async (req, res, next) => {
     try {
-        const orders = await Order.find().populate('user', '-password').populate('product').populate('promotion').populate('request_recharge').populate('visits')
+        const orders = await Order.find().populate('user', '-password').populate('product').populate('promotion').populate('deliveries').populate('request_recharges')
         res.status(200).json({
             success: true,
             orders

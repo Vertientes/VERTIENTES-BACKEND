@@ -19,6 +19,7 @@ export const createVisit = async (req, res, next) => {
         if (order.recharges_delivered >= order.quantity) {
             throw new ErrorResponse('This order dont have quantity for a visit')
         }
+
         const newVisit = new Visit({
             order: order.id,
             number_of_visit,

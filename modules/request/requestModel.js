@@ -17,7 +17,8 @@ const requestSchema = new mongoose.Schema({
     status:{
         type: String,
         required: true,
-        default: 'pendiente'
+        default: 'pendiente',
+        enum: ['pendiente', 'completo']
     }
 }, { timestamps: true });
 
