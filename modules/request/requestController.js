@@ -6,7 +6,7 @@ import Order from '../orders/orderModel.js'
 export const createRequestRecharge = async (req, res, next) => {
     try {
         const { requested_recharges } = req.body;
-        const order = await Order.findOne({ user: req.user.id, status: 'pendiente' })
+        const order = await Order.findOne({ user: req.user.id, status: 'en proceso' })
         if (order.recharges_in_favor < requested_recharges) {
             throw new ErrorResponse('Recharges in favor is minor')
         }

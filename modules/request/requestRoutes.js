@@ -5,7 +5,7 @@ import { createRequestRecharge, deleteRequest,  getRequestsForOrder, updateReque
 
 const router = express.Router()
 
-router.put('/new_request_recharge', validateNotEmptyFields(['requested_recharges']), verifyJwt, createRequestRecharge)
+router.post('/new_request_recharge', validateNotEmptyFields(['requested_recharges']), verifyJwt, createRequestRecharge)
 router.get('/get_requests_for_order', verifyJwt, getRequestsForOrder)
 router.put('/update_request/:id', validateNotEmptyFields(['requested_recharges']), verifyJwt, updateRequest)
 router.delete('/delete_request/:id', verifyJwt, deleteRequest)
