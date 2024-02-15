@@ -13,6 +13,11 @@ const requestSchema = new mongoose.Schema({
     requested_recharges: {
         type: Number,
         required: [true, 'Please add a refills'],
+    },
+    status:{
+        type: String,
+        required: true,
+        default: 'pendiente'
     }
 }, { timestamps: true });
 

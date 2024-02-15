@@ -9,20 +9,22 @@ export const newDelivery = async (req, res, next) => {
         const { id } = req.params
         const { delivery_date } = req.body
         const order = await Order.findById(id)
-        const delivery = await Delivery.findOne({ order: id })
-        const user = await User.findById(order.user)
-        console.log(req.body)
-        if (delivery) {
-            throw new ErrorResponse('The order has already been added to delivery', 400)
-        }
+        
         if (!order) {
             throw new ErrorResponse('Order not found', 404)
         }
+        const user = await User.findById(order.user)
+        if (order.status === 'en proceso' || order.status === 'completo') {
+            throw new ErrorResponse('The order has already been added to delivery', 400)
+        }
 
+        order.status = 'en proceso',
+        await order.save()
         const newDelivery = new Delivery({
             order: order.id,
             delivery_date,
-            delivery_zone: user.address.zone
+            delivery_zone: user.address.zone,
+            delivery_location: user.address.location
         })
 
         const savedDelivery = await newDelivery.save()
@@ -60,7 +62,7 @@ export const getDeliveries = async (req, res, next) => {
 
 export const getDeliveriesForC5 = async (req, res, next) => {
     try {
-        const deliveries = await Delivery.find({delivery_zone: 'c5'}).populate({
+        const deliveries = await Delivery.find({ delivery_zone: 'c5' }).populate({
             path: 'order',
             populate: [
                 { path: 'user' },
@@ -81,7 +83,7 @@ export const getDeliveriesForC5 = async (req, res, next) => {
 
 export const getDeliveriesForGeneral = async (req, res, next) => {
     try {
-        const deliveries = await Delivery.find({delivery_zone: 'general'}).populate({
+        const deliveries = await Delivery.find({ delivery_zone: 'general' }).populate({
             path: 'order',
             populate: [
                 { path: 'user' },
@@ -110,7 +112,7 @@ export const updateDeliveryData = async (req, res, next) => {
         const user = await User.findById(order.user)
         const updatedOrder = await Order.findByIdAndUpdate(order_id, { amount_paid, recharges_delivered }, { new: true })
         if (amount_paid > order.total_amount) {
-            order.extra_payment =  amount_paid - order.total_amount 
+            order.extra_payment = amount_paid - order.total_amount
             order.recharges_in_favor = order.quantity - recharges_delivered
             await order.save()
             user.company_drum = recharges_delivered
@@ -125,8 +127,7 @@ export const updateDeliveryData = async (req, res, next) => {
             user.balance = user.balance + amount_paid - order.total_amount
             await user.save()
         }
-        order.status = 'en proceso',
-            await order.save()
+
         delivery.status = 'entregado'
         await delivery.save()
 

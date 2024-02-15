@@ -20,6 +20,10 @@ const deliverySchema = new mongoose.Schema({
     delivery_date: {
         type: String,
         required: [true, 'Please add a delivery date'],
+    },
+    delivery_location: {
+        type: String,
+        required: [true, 'Please add a delivery location'],
     }
 }, { timestamps: true });
 
