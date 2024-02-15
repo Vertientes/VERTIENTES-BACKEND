@@ -111,7 +111,7 @@ export const updateDeliveryData = async (req, res, next) => {
         const updatedOrder = await Order.findByIdAndUpdate(order_id, { amount_paid, recharges_delivered, recharges_in_favor }, { new: true })
         if (amount_paid > order.total_amount) {
             order.extra_payment =  amount_paid - order.total_amount 
-
+            order.recharges_in_favor = order.quantity - recharges_delivered
             await order.save()
             user.company_drum = recharges_delivered
             user.balance = user.balance + order.extra_payment
@@ -119,6 +119,7 @@ export const updateDeliveryData = async (req, res, next) => {
         }
         else {
             order.extra_payment = 0
+            order.recharges_in_favor = order.quantity - recharges_delivered
             await order.save()
             user.company_drum = recharges_delivered
             user.balance = user.balance + amount_paid - order.total_amount
