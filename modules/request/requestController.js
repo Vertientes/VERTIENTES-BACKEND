@@ -32,13 +32,12 @@ export const createRequestRecharge = async (req, res, next) => {
 export const updateRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { requested_recharges } = req.body;
         const request = await Request.findById(id)
         if (!request) {
             throw new ErrorResponse('Request not found', 404)
         }
 
-        const updatedRequest = await Request.findByIdAndUpdate(id, { requested_recharges }, { new: true })
+        const updatedRequest = await Request.findByIdAndUpdate(id, { status: 'completo' }, { new: true })
         res.status(200).json({
             success: true,
             updatedRequest
@@ -60,6 +59,20 @@ export const getRequestsForOrder = async (req, res, next) => {
         next(error);
     }
 };
+
+export const getOneRequest = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const request = await Request.findById(id)
+
+        res.status(200).json({
+            success: true,
+            request
+        })
+    } catch (error) {
+        next(error)
+    }
+}
 
 export const getRequests = async (req, res, next) => {
     try {
