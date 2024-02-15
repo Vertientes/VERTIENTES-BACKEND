@@ -20,10 +20,6 @@ export const createRequestRecharge = async (req, res, next) => {
 
         order.request_recharge.push(savedRequest.id);
 
-        order.recharges_in_favor = order.recharges_in_favor - requested_recharges
-
-        await order.save();
-
         res.status(201).json({
             success: true,
             savedRequest
