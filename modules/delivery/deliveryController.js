@@ -48,8 +48,8 @@ export const getDeliveries = async (req, res, next) => {
                 { path: 'user' },
                 { path: 'product' },
                 { path: 'promotion' },
-                { path: 'visits' },
-                { path: 'request_recharge' }
+                { path: 'deliveries' },
+                { path: 'request_recharges' }
             ]
         }).sort({ "delivery_date": 1 });
         res.status(200).json({
@@ -69,8 +69,8 @@ export const getDeliveriesForC5 = async (req, res, next) => {
                 { path: 'user' },
                 { path: 'product' },
                 { path: 'promotion' },
-                { path: 'visits' },
-                { path: 'request_recharge' }
+                { path: 'deliveries' },
+                { path: 'request_recharges' }
             ]
         }).sort({ "delivery_date": 1 });
         res.status(200).json({
@@ -90,8 +90,8 @@ export const getDeliveriesForGeneral = async (req, res, next) => {
                 { path: 'user' },
                 { path: 'product' },
                 { path: 'promotion' },
-                { path: 'visits' },
-                { path: 'request_recharge' }
+                { path: 'deliveries' },
+                { path: 'request_recharges' }
             ]
         }).sort({ "delivery_date": 1 });
         res.status(200).json({
