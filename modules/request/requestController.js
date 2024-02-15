@@ -18,7 +18,7 @@ export const createRequestRecharge = async (req, res, next) => {
         const savedRequest = await newRequest.save();
 
 
-        order.request_recharge.push(savedRequest.id);
+        order.request_recharges.push(savedRequest.id);
         await order.save()
         res.status(201).json({
             success: true,
