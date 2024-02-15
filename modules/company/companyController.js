@@ -5,7 +5,7 @@ export const newCompany = async (req, res, next) => {
     try {
         const { holder_cuil, holder_name, neighborhood, street, house_number, city, postal_code, business_name, business_name_cuil, email, alias } = req.body
         const company = await Company.find()
-        if (company.length>0) {
+        if (company.length > 0) {
             throw new ErrorResponse('Solo puede haber una empresa', 400)
         }
 
@@ -42,6 +42,22 @@ export const getCompanies = async (req, res, next) => {
         res.status(200).json({
             success: true,
             companies
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const updateCompany = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const { holder_cuil, holder_name, neighborhood, street, house_number, city, postal_code, business_name, business_name_cuil, email, alias } = req.body
+
+        const updatedCompany = await Company.findByIdAndUpdate(id, { holder_cuil, holder_name, neighborhood, street, house_number, city, postal_code, business_name, business_name_cuil, email, alias }, { new: true })
+
+        res.status(200).json({
+            success: true,
+            updatedCompany
         })
     } catch (error) {
         next(error)
