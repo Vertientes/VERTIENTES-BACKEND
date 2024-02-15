@@ -66,7 +66,7 @@ export const logOut = async (req, res, next) => {
 
 export const userProfile = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id)
+        const user = await User.findById(req.user.id).select('-password')
         res.status(200).json({
             success: true,
             user
@@ -75,4 +75,28 @@ export const userProfile = async (req, res, next) => {
         next(error)
     }
 
+}
+
+export const signUpDelivery = async (req, res, next) => {
+    try {
+        const { firstName, lastName, dni, mobile_phone, password } = req.body
+        const role = 'delivery'
+        const newUser = new User({
+            firstName,
+            lastName,
+            dni,
+            mobile_phone,
+            password,
+            address: req.body.address,
+            role
+        })
+        const user = await newUser.save()
+        res.status(201).json({
+            success: true,
+            user
+        })
+    } catch (error) {
+        next(error)
+        console.error(error)
+    }
 }

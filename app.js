@@ -13,6 +13,7 @@ import promotionRoutes from './modules/promotion/promotionRoutes.js'
 import visitRoutes from './modules/visits/visitRoutes.js'
 import requestRoutes from './modules/request/requestRoutes.js'
 import deliveryRoutes from './modules/delivery/deliveryRoutes.js'
+import companyRoutes from './modules/company/companyRoutes.js'
 import { dbConnect } from './utils/dbConnect.js'
 
 
@@ -35,6 +36,7 @@ app.use('/api', promotionRoutes)
 app.use('/api', visitRoutes)
 app.use('/api', requestRoutes)
 app.use('/api', deliveryRoutes)
+app.use('/api', companyRoutes)
 app.use(errorHandler)
 
 app.listen(PORT, () => {
