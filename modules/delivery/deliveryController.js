@@ -104,11 +104,11 @@ export const getDeliveriesForGeneral = async (req, res, next) => {
 export const updateDeliveryData = async (req, res, next) => {
     try {
         const { id } = req.params
-        const { order_id, amount_paid, recharges_delivered, recharges_in_favor } = req.body
+        const { order_id, amount_paid, recharges_delivered } = req.body
         const delivery = await Delivery.findById(id)
         const order = await Order.findById(order_id)
         const user = await User.findById(order.user)
-        const updatedOrder = await Order.findByIdAndUpdate(order_id, { amount_paid, recharges_delivered, recharges_in_favor }, { new: true })
+        const updatedOrder = await Order.findByIdAndUpdate(order_id, { amount_paid, recharges_delivered }, { new: true })
         if (amount_paid > order.total_amount) {
             order.extra_payment =  amount_paid - order.total_amount 
             order.recharges_in_favor = order.quantity - recharges_delivered
