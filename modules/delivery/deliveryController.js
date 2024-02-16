@@ -155,6 +155,7 @@ export const updateDeliveryData = async (req, res, next) => {
         const delivery = await Delivery.findById(id)
         const order = await Order.findById(order_id)
         const user = await User.findById(order.user)
+        console.log(recharges_delivered)
 
         if (order.amount_paid > 0) {
             if (user.balance < 0) {

@@ -91,18 +91,11 @@ const userSchema = new mongoose.Schema({
     }
 }, { timestamps: true })
 
-//encriptar el password
-userSchema.pre('save', async function (next) {
-    //si el pw no fue modificado continuar
-    if (!this.isModified('password')) {
-        next()
-    }
-    this.password = await bcrypt.hash(this.password, 10)
-})
 
 //funcion para comparar el password con el hasheado
 
 userSchema.methods.comparePassword = async function (enteredPassword) {
+    console.log(enteredPassword)
     return await bcrypt.compare(enteredPassword, this.password)
 }
 

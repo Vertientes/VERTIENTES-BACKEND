@@ -1,16 +1,18 @@
 import User from './userModel.js'
 import { ErrorResponse } from '../../utils/errorResponse.js'
+import bcrypt from 'bcryptjs'
 
 //registrar usuario
 export const signUp = async (req, res, next) => {
     try {
         const { firstName, lastName, dni, mobile_phone, password, role } = req.body
+        const passwordCrypt = await bcrypt.hash(password, 10)
         const newUser = new User({
             firstName,
             lastName,
             dni,
             mobile_phone,
-            password,
+            password: passwordCrypt,
             address: req.body.address,
             role
         })
@@ -36,6 +38,7 @@ const sendTokenResponse = async (user, codeStatus, res) => {
 export const signIn = async (req, res, next) => {
     const { dni, password } = req.body
     const user = await User.findOne({ dni })
+    console.log(user)
     if (!user) {
         return next(new ErrorResponse('Invalid credentials', 400))
     }
@@ -43,8 +46,9 @@ export const signIn = async (req, res, next) => {
         throw new ErrorResponse('User is not active', 400)
     }
     const isMatched = await user.comparePassword(password)
+    console.log(isMatched)
     if (!isMatched) {
-        return next(new ErrorResponse('Invalid credentials', 400))
+        return next(new ErrorResponse('Invalid credentialsssssss', 400))
     }
 
     sendTokenResponse(user, 200, res)
