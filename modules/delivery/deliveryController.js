@@ -151,7 +151,7 @@ export const getDeliveriesForGeneral = async (req, res, next) => {
 export const updateDeliveryData = async (req, res, next) => {
     try {
         const { id } = req.params
-        const { order_id, amount_paid, recharges_delivered, returned_drums } = req.body
+        const { order_id, amount_paid, recharges_delivered, returned_drums, debt } = req.body
         const delivery = await Delivery.findById(id)
         const order = await Order.findById(order_id)
         const user = await User.findById(order.user)
@@ -161,6 +161,9 @@ export const updateDeliveryData = async (req, res, next) => {
             order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
             await order.save()
             user.company_drum = user.company_drum + (recharges_delivered - returned_drums)
+            if(user.balance < 0 ){
+                user.balance = user.balance + debt
+            }
 
             delivery.status = 'entregado'
             await delivery.save()
