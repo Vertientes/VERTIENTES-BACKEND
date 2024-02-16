@@ -160,7 +160,7 @@ export const updateDeliveryData = async (req, res, next) => {
             order.recharges_delivered = order.recharges_delivered + recharges_delivered
             order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
             await order.save()
-            user.company_drum = (user.company_drum - returned_drums) + recharges_delivered
+            user.company_drum = user.company_drum + (recharges_delivered - returned_drums)
 
             delivery.status = 'entregado'
             await delivery.save()
