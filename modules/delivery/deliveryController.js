@@ -155,6 +155,7 @@ export const updateDeliveryData = async (req, res, next) => {
         const delivery = await Delivery.findById(id)
         const order = await Order.findById(order_id)
         const user = await User.findById(order.user)
+
         if (order.amount_paid > 0) {
             if (user.balance < 0) {
                 order.amount_paid = order.amount_paid + debt
@@ -167,41 +168,33 @@ export const updateDeliveryData = async (req, res, next) => {
             order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
             await order.save()
             user.company_drum = user.company_drum + (recharges_delivered - returned_drums)
+            await user.save()
             delivery.status = 'entregado'
             await delivery.save()
-
-            res.status(200).json({
-                success: true,
-                order,
-                delivery
-            })
+        } else {
+            if (amount_paid > order.total_amount) {
+                order.amount_paid = amount_paid
+                order.recharges_delivered = recharges_delivered
+                order.extra_payment = amount_paid - order.total_amount
+                order.recharges_in_favor = order.quantity - recharges_delivered
+                await order.save()
+                user.company_drum = recharges_delivered
+                user.balance = user.balance + order.extra_payment
+                await user.save()
+            }
+            else {
+                order.amount_paid = amount_paid
+                order.recharges_delivered = recharges_delivered
+                order.extra_payment = 0
+                order.recharges_in_favor = order.quantity - recharges_delivered
+                await order.save()
+                user.company_drum = recharges_delivered
+                user.balance = user.balance + amount_paid - order.total_amount
+                await user.save()
+            }
+            delivery.status = 'entregado'
+            await delivery.save()
         }
-        if (amount_paid > order.total_amount) {
-            order.amount_paid = amount_paid
-            order.recharges_delivered = recharges_delivered
-            order.extra_payment = amount_paid - order.total_amount
-            order.recharges_in_favor = order.quantity - recharges_delivered
-            await order.save()
-            user.company_drum = recharges_delivered
-            user.balance = user.balance + order.extra_payment
-            await user.save()
-        }
-        else {
-            order.amount_paid = amount_paid
-            order.recharges_delivered = recharges_delivered
-            order.extra_payment = 0
-            order.recharges_in_favor = order.quantity - recharges_delivered
-            await order.save()
-            user.company_drum = recharges_delivered
-            user.balance = user.balance + amount_paid - order.total_amount
-            await user.save()
-        }
-
-
-
-
-        delivery.status = 'entregado'
-        await delivery.save()
 
         res.status(200).json({
             success: true,
@@ -212,5 +205,3 @@ export const updateDeliveryData = async (req, res, next) => {
         next(error)
     }
 }
-
-
