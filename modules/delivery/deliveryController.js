@@ -156,7 +156,9 @@ export const updateDeliveryData = async (req, res, next) => {
         const order = await Order.findById(order_id)
         const user = await User.findById(order.user)
         console.log(recharges_delivered)
-
+        if(delivery.status === 'entregado'){
+            throw new ErrorResponse('Cant update delivered delivery', 400)
+        }
         if (order.amount_paid > 0) {
             if (user.balance < 0) {
                 order.amount_paid = order.amount_paid + debt
@@ -165,8 +167,8 @@ export const updateDeliveryData = async (req, res, next) => {
                 await user.save()
             }
             order.amount_paid = order.amount_paid,
-            order.recharges_delivered = order.recharges_delivered + recharges_delivered
-            order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
+            order.recharges_delivered = order.recharges_delivered.parseInt() + recharges_delivered.parseInt()
+            order.recharges_in_favor = order.recharges_in_favor.parseInt() - recharges_delivered.parseInt()
             await order.save()
             user.company_drum = user.company_drum + (recharges_delivered - returned_drums)
             await user.save()
