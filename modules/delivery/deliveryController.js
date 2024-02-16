@@ -167,8 +167,8 @@ export const updateDeliveryData = async (req, res, next) => {
                 await user.save()
             }
             order.amount_paid = order.amount_paid,
-            order.recharges_delivered = order.recharges_delivered.parseInt() + recharges_delivered.parseInt()
-            order.recharges_in_favor = order.recharges_in_favor.parseInt() - recharges_delivered.parseInt()
+            order.recharges_delivered = order.recharges_delivered + recharges_delivered
+            order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
             await order.save()
             user.company_drum = user.company_drum + (recharges_delivered - returned_drums)
             await user.save()
