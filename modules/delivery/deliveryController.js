@@ -4,40 +4,50 @@ import Delivery from './deliveryModel.js'
 import User from '../user/userModel.js'
 
 export const newDelivery = async (req, res, next) => {
-
     try {
-        const { id } = req.params
-        const { delivery_date } = req.body
-        const order = await Order.findById(id)
+        const { id } = req.params;
+        const { delivery_date } = req.body;
+        const order = await Order.findById(id);
 
         if (!order) {
-            throw new ErrorResponse('Order not found', 404)
+            throw new ErrorResponse('Order not found', 404);
         }
-        const user = await User.findById(order.user)
+
+        const user = await User.findById(order.user);
         if (order.status === 'completo' || (order.recharges_in_favor <= 0 && order.recharges_delivered > 0)) {
-            throw new ErrorResponse('The order cant add to delivery', 400)
+            throw new ErrorResponse('The order cant add to delivery', 400);
         }
-        order.status = 'en proceso',
-            await order.save()
+
+        order.status = 'en proceso';
+        await order.save();
+
+        // Obtener las coordenadas del usuario y convertirlas a un array de números
+        const locationString = user.address.location;
+        const coordinates = locationString.split(',').map(coord => parseFloat(coord.trim()));
+
         const newDelivery = new Delivery({
             order: order.id,
             delivery_date,
             delivery_zone: user.address.zone,
-            delivery_location: user.address.location
-        })
+            delivery_location: {
+                type: 'Point',
+                coordinates // Utiliza las coordenadas convertidas en un array de números
+            }
+        });
 
-        const savedDelivery = await newDelivery.save()
-        order.deliveries.push(savedDelivery.id)
-        await order.save()
+        const savedDelivery = await newDelivery.save();
+        order.deliveries.push(savedDelivery.id);
+        await order.save();
+
         res.status(201).json({
             success: true,
             savedDelivery
         });
-
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
+
 
 export const getDeliveries = async (req, res, next) => {
     try {
@@ -81,6 +91,39 @@ export const getDeliveriesForC5 = async (req, res, next) => {
     }
 };
 
+export const getDeliveriesByLocation = async (req, res, next) => {
+    try {
+        // Convertir las coordenadas a números flotantes
+        const initialLocation = {
+            type: "Point",
+            coordinates: [parseFloat(-26.140053102542083), parseFloat(-58.1586185445208)]
+        };
+
+        // Buscar los deliveries ordenados por ubicación más cercana
+        const deliveries = await Delivery.aggregate([
+            {
+                $geoNear: {
+                    near: initialLocation,
+                    distanceField: "distance",
+                    spherical: true,
+                    query: { status: 'pendiente' }, // Puedes agregar condiciones adicionales aquí si es necesario
+                    includeLocs: "delivery_location",
+                    maxDistance: 500000, // Especifica la distancia máxima en metros
+                    distanceMultiplier: 0.001 // Convertir la distancia a kilómetros
+                }
+            },
+            { $sort: { distance: 1 } } // Ordenar por distancia ascendente
+        ]);
+
+        res.status(200).json({
+            success: true,
+            deliveries
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const getDeliveriesForGeneral = async (req, res, next) => {
     try {
         const deliveries = await Delivery.find({ delivery_zone: 'general' }).populate({
@@ -112,23 +155,20 @@ export const updateDeliveryData = async (req, res, next) => {
         const user = await User.findById(order.user)
         if (order.amount_paid > 0) {
             amount_paid = order.amount_paid,
-                recharges_delivered = order.recharges_delivered + recharges_delivered
+            order.recharges_delivered = order.recharges_delivered + recharges_delivered
             order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
             await order.save()
             user.company_drum = (user.company_drum - returned_drums) + recharges_delivered
 
-            const updatedOrder = await Order.findByIdAndUpdate(order_id, { amount_paid, recharges_delivered }, { new: true })
             delivery.status = 'entregado'
             await delivery.save()
 
             res.status(200).json({
                 success: true,
-                updatedOrder,
+                order,
                 delivery
             })
         }
-
-        const updatedOrder = await Order.findByIdAndUpdate(order_id, { amount_paid, recharges_delivered }, { new: true })
         if (amount_paid > order.total_amount) {
             order.extra_payment = amount_paid - order.total_amount
             order.recharges_in_favor = order.quantity - recharges_delivered
@@ -154,7 +194,7 @@ export const updateDeliveryData = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            updatedOrder,
+            order,
             delivery
         })
     } catch (error) {

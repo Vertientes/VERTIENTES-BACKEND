@@ -22,10 +22,17 @@ const deliverySchema = new mongoose.Schema({
         required: [true, 'Please add a delivery date'],
     },
     delivery_location: {
-        type: String,
-        required: [true, 'Please add a delivery location'],
+        type: {
+            type: String,
+            enum: ['Point'], // Solo permitir el tipo 'Point'
+            required: true
+        },
+        coordinates: {
+            type: [Number], // Array de números para latitud y longitud
+            required: true
+        }
     }
 
 }, { timestamps: true });
-deliverySchema.index({ delivery_location: '2dsphere' });
+deliverySchema.index({ delivery_location: '2d' });
 export default mongoose.model('Delivery', deliverySchema);
