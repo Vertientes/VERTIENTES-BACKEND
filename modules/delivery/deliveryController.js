@@ -18,8 +18,6 @@ export const newDelivery = async (req, res, next) => {
             throw new ErrorResponse('The order cant add to delivery', 400);
         }
 
-        order.status = 'en proceso';
-        await order.save();
 
         // Obtener las coordenadas del usuario y convertirlas a un array de números
         const locationString = user.address.location;
@@ -38,6 +36,9 @@ export const newDelivery = async (req, res, next) => {
         const savedDelivery = await newDelivery.save();
         order.deliveries.push(savedDelivery.id);
         await order.save();
+        order.status = 'en proceso';
+        await order.save();
+
 
         res.status(201).json({
             success: true,
@@ -155,7 +156,7 @@ export const updateDeliveryData = async (req, res, next) => {
         const user = await User.findById(order.user)
         if (order.amount_paid > 0) {
             amount_paid = order.amount_paid,
-            order.recharges_delivered = order.recharges_delivered + recharges_delivered
+                order.recharges_delivered = order.recharges_delivered + recharges_delivered
             order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
             await order.save()
             user.company_drum = (user.company_drum - returned_drums) + recharges_delivered
