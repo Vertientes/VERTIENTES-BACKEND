@@ -5,7 +5,7 @@ export const validateUserExists = async (req, res, next) => {
     try {
         const existingUser = await User.findOne({ dni: req.body.dni });
         if (existingUser) {
-            return next(new ErrorResponse('User already exists'))
+            throw new ErrorResponse('User already exists', 409)
         }
         next()
     } catch (error) {

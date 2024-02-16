@@ -22,6 +22,7 @@ export const newDelivery = async (req, res, next) => {
         // Obtener las coordenadas del usuario y convertirlas a un array de números
         const locationString = user.address.location;
         const coordinates = locationString.split(',').map(coord => parseFloat(coord.trim()));
+        console.log(coordinates)
 
         const newDelivery = new Delivery({
             order: order.id,
@@ -29,7 +30,7 @@ export const newDelivery = async (req, res, next) => {
             delivery_zone: user.address.zone,
             delivery_location: {
                 type: 'Point',
-                coordinates // Utiliza las coordenadas convertidas en un array de números
+                coordinates: coordinates // Utiliza las coordenadas convertidas en un array de números
             }
         });
 
@@ -171,6 +172,8 @@ export const updateDeliveryData = async (req, res, next) => {
             })
         }
         if (amount_paid > order.total_amount) {
+            order.amount_paid = amount_paid
+            order.recharges_delivered = recharges_delivered
             order.extra_payment = amount_paid - order.total_amount
             order.recharges_in_favor = order.quantity - recharges_delivered
             await order.save()
@@ -179,6 +182,8 @@ export const updateDeliveryData = async (req, res, next) => {
             await user.save()
         }
         else {
+            order.amount_paid = amount_paid
+            order.recharges_delivered = recharges_delivered
             order.extra_payment = 0
             order.recharges_in_favor = order.quantity - recharges_delivered
             await order.save()

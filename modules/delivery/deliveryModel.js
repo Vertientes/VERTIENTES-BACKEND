@@ -34,5 +34,5 @@ const deliverySchema = new mongoose.Schema({
     }
 
 }, { timestamps: true });
-deliverySchema.index({ delivery_location: '2d' });
+
 export default mongoose.model('Delivery', deliverySchema);
