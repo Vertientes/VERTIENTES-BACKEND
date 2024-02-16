@@ -155,7 +155,6 @@ export const updateDeliveryData = async (req, res, next) => {
         const delivery = await Delivery.findById(id)
         const order = await Order.findById(order_id)
         const user = await User.findById(order.user)
-        console.log(recharges_delivered)
         if(delivery.status === 'entregado'){
             throw new ErrorResponse('Cant update delivered delivery', 400)
         }
@@ -172,6 +171,10 @@ export const updateDeliveryData = async (req, res, next) => {
             await order.save()
             user.company_drum = user.company_drum + (recharges_delivered - returned_drums)
             await user.save()
+            if(order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount){
+                order.status = 'completo'
+                await order.save()
+            }
             delivery.status = 'entregado'
             await delivery.save()
         } else {
@@ -184,6 +187,10 @@ export const updateDeliveryData = async (req, res, next) => {
                 user.company_drum = recharges_delivered
                 user.balance = user.balance + order.extra_payment
                 await user.save()
+                if(order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount){
+                    order.status = 'completo'
+                    await order.save()
+                }
             }
             else {
                 order.amount_paid = amount_paid
@@ -194,6 +201,10 @@ export const updateDeliveryData = async (req, res, next) => {
                 user.company_drum = recharges_delivered
                 user.balance = user.balance + amount_paid - order.total_amount
                 await user.save()
+                if(order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount){
+                    order.status = 'completo'
+                    await order.save()
+                }
             }
             delivery.status = 'entregado'
             await delivery.save()
