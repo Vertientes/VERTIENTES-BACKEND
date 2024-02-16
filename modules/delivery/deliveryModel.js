@@ -12,10 +12,10 @@ const deliverySchema = new mongoose.Schema({
         enum: ['pendiente', 'entregado'],
         default: 'pendiente'
     },
-    delivery_zone:{
+    delivery_zone: {
         type: String,
         required: true,
-        enum: ['c5','general']
+        enum: ['c5', 'general']
     },
     delivery_date: {
         type: String,
@@ -25,6 +25,7 @@ const deliverySchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add a delivery location'],
     }
-}, { timestamps: true });
 
+}, { timestamps: true });
+deliverySchema.index({ delivery_location: '2dsphere' });
 export default mongoose.model('Delivery', deliverySchema);

@@ -14,10 +14,9 @@ export const newDelivery = async (req, res, next) => {
             throw new ErrorResponse('Order not found', 404)
         }
         const user = await User.findById(order.user)
-        if (order.status === 'completo' || order.recharges_in_favor <= 0) {
+        if (order.status === 'completo' || (order.recharges_in_favor <= 0 && order.recharges_delivered > 0)) {
             throw new ErrorResponse('The order cant add to delivery', 400)
         }
-
         order.status = 'en proceso',
             await order.save()
         const newDelivery = new Delivery({
