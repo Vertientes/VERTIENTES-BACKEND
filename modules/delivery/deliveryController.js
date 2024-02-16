@@ -156,8 +156,8 @@ export const updateDeliveryData = async (req, res, next) => {
         const order = await Order.findById(order_id)
         const user = await User.findById(order.user)
         if (order.amount_paid > 0) {
-            amount_paid = order.amount_paid,
-                order.recharges_delivered = order.recharges_delivered + recharges_delivered
+            order.amount_paid = order.amount_paid,
+            order.recharges_delivered = order.recharges_delivered + recharges_delivered
             order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
             await order.save()
             user.company_drum = (user.company_drum - returned_drums) + recharges_delivered
