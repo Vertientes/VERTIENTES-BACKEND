@@ -1,84 +1,50 @@
 import User from './userModel.js'
 import { ErrorResponse } from '../../utils/errorResponse.js'
 import bcrypt from 'bcryptjs'
+import { sendTokenResponse } from '../../utils/sendTokenResponse.js'
 
-//registrar usuario
+//Registro de usuario
 export const signUp = async (req, res, next) => {
     try {
-        const { firstName, lastName, dni, mobile_phone, password, role } = req.body
+        const { first_name, last_name, dni, mobile_phone, password } = req.body
         const passwordCrypt = await bcrypt.hash(password, 10)
         const newUser = new User({
-            firstName,
-            lastName,
+            first_name,
+            last_name,
             dni,
             mobile_phone,
             password: passwordCrypt,
             address: req.body.address,
-            role
+            role: 'user'
         })
         const user = await newUser.save()
+
         res.status(201).json({
             success: true,
             user
         })
     } catch (error) {
         next(error)
-        console.error(error)
     }
 }
-const sendTokenResponse = async (user, codeStatus, res) => {
-    const token = user.getJwtToken()
-    res.status(codeStatus).json({
-        success: true,
-        token,
-        user
-    })
-}
-//ingresar usuario
+
+
+
+//Loguear al usuario en la aplicaicon
 export const signIn = async (req, res, next) => {
     const { dni, password } = req.body
     const user = await User.findOne({ dni })
-    console.log(user)
     if (!user) {
-        return next(new ErrorResponse('Invalid credentials', 400))
+        return next(new ErrorResponse('User not found', 404))
     }
     if (user.is_active === false) {
-        throw new ErrorResponse('User is not active', 400)
+        return next(new ErrorResponse('User is not active', 400))
     }
     const isMatched = await user.comparePassword(password)
-    console.log(isMatched)
     if (!isMatched) {
-        return next(new ErrorResponse('Invalid credentialsssssss', 400))
+        return next(new ErrorResponse('Incorrect password', 400))
     }
-
     sendTokenResponse(user, 200, res)
-}
-
-
-
-//log out
-
-export const logOut = async (req, res, next) => {
-    res.clearCookie('token')
-    res.status(200).json({
-        success: true,
-        message: 'Logged out'
-    })
-}
-
-//user profile, o get user by id
-
-export const userProfile = async (req, res, next) => {
-    try {
-        const user = await User.findById(req.user.id).select('-password')
-        res.status(200).json({
-            success: true,
-            user
-        })
-    } catch (error) {
-        next(error)
-    }
-
 }
 
 export const signUpDelivery = async (req, res, next) => {
@@ -101,6 +67,5 @@ export const signUpDelivery = async (req, res, next) => {
         })
     } catch (error) {
         next(error)
-        console.error(error)
     }
 }

@@ -74,10 +74,6 @@ const orderSchema = new mongoose.Schema({
         ref: 'Promotion',
         required: false,
     },
-    observation: {
-        type: String,
-        required: false,
-    },
     total_amount: {
         type: Number,
         required: true

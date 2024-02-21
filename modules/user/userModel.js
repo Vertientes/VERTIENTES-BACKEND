@@ -3,13 +3,13 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
 const userSchema = new mongoose.Schema({
-    firstName: {
+    first_name: {
         type: String,
         trim: true,
         required: [true, 'First name is required'],
         maxlength: 32
     },
-    lastName: {
+    last_name: {
         type: String,
         trim: true,
         required: [true, 'Last name is required'],
@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema({
             required: [true, 'Street is required'],
             maxlength: 50
         },
-        houseNumber: {
+        house_number: {
             type: Number,
             trim: true,
             required: [true, 'House number is required'],
@@ -72,7 +72,6 @@ const userSchema = new mongoose.Schema({
         required: true,
         default: true
     },
-    //bidones que no se devolvieron
     company_drum:{
         type: Number,
         required: true,
@@ -85,7 +84,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin', 'delivery', 'super_admin'],
+        enum: ['user', 'admin', 'delivery', 'super_admin', 'user_with_plan'],
         required:[true, 'Role is required'],
         default: 'user'
     }
@@ -95,7 +94,6 @@ const userSchema = new mongoose.Schema({
 //funcion para comparar el password con el hasheado
 
 userSchema.methods.comparePassword = async function (enteredPassword) {
-    console.log(enteredPassword)
     return await bcrypt.compare(enteredPassword, this.password)
 }
 

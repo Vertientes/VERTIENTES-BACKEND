@@ -22,7 +22,6 @@ export const newDelivery = async (req, res, next) => {
         // Obtener las coordenadas del usuario y convertirlas a un array de números
         const locationString = user.address.location;
         const coordinates = locationString.split(',').map(coord => parseFloat(coord.trim()));
-        console.log(coordinates)
 
         const newDelivery = new Delivery({
             order: order.id,
@@ -148,6 +147,8 @@ export const getDeliveriesForGeneral = async (req, res, next) => {
 };
 
 
+
+//Controlador para realizar un reparto
 export const updateDeliveryData = async (req, res, next) => {
     try {
         const { id } = req.params
@@ -158,7 +159,7 @@ export const updateDeliveryData = async (req, res, next) => {
         if(delivery.status === 'entregado'){
             throw new ErrorResponse('Cant update delivered delivery', 400)
         }
-        if (order.amount_paid > 0) {
+        if (order.deliveries.length > 0) {
             if (user.balance < 0) {
                 order.amount_paid = order.amount_paid + debt
                 user.balance = user.balance + debt
@@ -171,6 +172,8 @@ export const updateDeliveryData = async (req, res, next) => {
             await order.save()
             user.company_drum = user.company_drum + (recharges_delivered - returned_drums)
             await user.save()
+
+            //Si despues de todas las operaciones realizadas cumple con la sgte validacion, la orden sera completada
             if(order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount){
                 order.status = 'completo'
                 await order.save()
@@ -179,28 +182,39 @@ export const updateDeliveryData = async (req, res, next) => {
             await delivery.save()
         } else {
             if (amount_paid > order.total_amount) {
+                //Datos de la orden
                 order.amount_paid = amount_paid
                 order.recharges_delivered = recharges_delivered
                 order.extra_payment = amount_paid - order.total_amount
                 order.recharges_in_favor = order.quantity - recharges_delivered
                 await order.save()
+
+                //Datos del usuario
                 user.company_drum = recharges_delivered
                 user.balance = user.balance + order.extra_payment
                 await user.save()
+
+                //Si despues de todas las operaciones realizadas cumple con la sgte validacion, la orden sera completada
                 if(order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount){
                     order.status = 'completo'
                     await order.save()
                 }
             }
             else {
+
+                //Datos de la orden
                 order.amount_paid = amount_paid
                 order.recharges_delivered = recharges_delivered
                 order.extra_payment = 0
                 order.recharges_in_favor = order.quantity - recharges_delivered
                 await order.save()
+
+                //Datos del usuario
                 user.company_drum = recharges_delivered
-                user.balance = user.balance + amount_paid - order.total_amount
+                user.balance = (user.balance + amount_paid) - order.total_amount
                 await user.save()
+
+                //Si despues de todas las operaciones realizadas cumple con la sgte validacion, la orden sera completada
                 if(order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount){
                     order.status = 'completo'
                     await order.save()
@@ -215,6 +229,16 @@ export const updateDeliveryData = async (req, res, next) => {
             order,
             delivery
         })
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+//Controlador para el repartidor, por si necesita editar datos del cliente
+export const updateAddressUserData = async (req, res, next) => {
+    try {
+        
     } catch (error) {
         next(error)
     }
