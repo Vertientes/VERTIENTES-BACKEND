@@ -48,26 +48,6 @@ export const userProfile = async (req, res, next) => {
 
 }
 
-// Actualizar dados del usuarios por parte del secretario, aislados a la orden
-export const updateUserDataForSecretary = async (req, res, next) => {
-    try {
-        const { id } = req.params
-        const { first_name, last_name, dni, mobile_phone, neighborhood, street, house_number, zone, location } = req.body
-        const user = await User.findById(id)
-        if (!user) {
-            return next(new ErrorResponse('User not found', 404))
-        }
-        const updatedUser = await User.findByIdAndUpdate(id, { first_name, last_name, dni, mobile_phone, address: { neighborhood, street, house_number, zone, location } }, { new: true })
-
-        res.status(200).json({
-            success: true,
-            updatedUser
-        })
-    } catch (error) {
-        next(error)
-    }
-}
-
 // Actualizar TODOS los datos del usuario sin afectar a las relaciones, solo el superadmin ejecuta esto
 export const updateUserDataForSuperAdmin = async (req, res, next) => {
     try {

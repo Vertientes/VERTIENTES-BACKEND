@@ -1,7 +1,7 @@
 import express from 'express'
 import { verifyJwt } from '../../middlewares/verifyJwt.js'
 import { isAdmin } from '../../middlewares/isAdmin.js'
-import { activateUser, changePassword, changeUserRoleWithPlan, deactivateUser, getAllUsers, getOneUser, getUsersActive, updateAddressUserData, updateUserDataForSecretary, updateUserDataForSuperAdmin, userProfile } from './userController.js'
+import { activateUser, changePassword, changeUserRoleWithPlan, deactivateUser, getAllUsers, getOneUser, getUsersActive, updateAddressUserData, updateUserDataForSuperAdmin, userProfile } from './userController.js'
 import { validateNotEmptyFields } from '../../middlewares/validateNotEmptyFields.js'
 import { isSuperAdmin } from '../../middlewares/isSuperAdmin.js'
 import { isDelivery } from '../../middlewares/isDelivery.js'
@@ -30,8 +30,6 @@ router.put('/activate_user/:id', verifyJwt, isSuperAdmin, activateUser)
 router.put('/change_password/:id', verifyJwt, changePassword)
 
 router.put('/update_address_data/:id', upload.single('house_img'), validateNotEmptyFields(['neighborhood', 'street', 'house_number', 'zone', 'location']), verifyJwt, isDelivery, updateAddressUserData)
-
-router.put('/update_user_data_for_secretary/:id', validateNotEmptyFields(['first_name', 'last_name', 'dni', 'mobile_phone', 'neighborhood', 'street', 'house_number', 'zone', 'location']), verifyJwt, isAdmin, updateUserDataForSecretary)
 
 router.put('/update_user_data_for_super_admin/:id', validateNotEmptyFields(['first_name', 'last_name', 'dni', 'mobile_phone', 'neighborhood', 'street', 'house_number', 'zone', 'location', 'balance', 'company_drum']), verifyJwt, isSuperAdmin, updateUserDataForSuperAdmin)
 
