@@ -34,6 +34,7 @@ export const signUp = async (req, res, next) => {
 export const signIn = async (req, res, next) => {
     const { dni, password } = req.body
     const user = await User.findOne({ dni })
+    console.log(password)
     if (!user) {
         return next(new ErrorResponse('User not found', 404))
     }
@@ -49,14 +50,15 @@ export const signIn = async (req, res, next) => {
 
 export const signUpDelivery = async (req, res, next) => {
     try {
-        const { firstName, lastName, dni, mobile_phone, password } = req.body
+        const { first_name, last_name, dni, mobile_phone, password } = req.body
+        const passwordCrypt = await bcrypt.hash(password, 10)
         const role = 'delivery'
         const newUser = new User({
-            firstName,
-            lastName,
+            first_name,
+            last_name,
             dni,
             mobile_phone,
-            password,
+            password: passwordCrypt,
             address: req.body.address,
             role
         })

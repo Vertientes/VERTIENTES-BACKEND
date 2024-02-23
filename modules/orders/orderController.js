@@ -9,68 +9,73 @@ export const newOrder = async (req, res, next) => {
     try {
         const { quantity, promotion_id, payment_method, product_id, observation, order_date, order_due_date } = req.body
         const file = req.file
-        let monto_descontado = 0
-        let total_bidones_descontado = 0
-        let total_bidones_sin_descuento = 0
-        let comprobante = ""
-        let user_balance = 0
 
-
-        // Verifica si el usuario existe
+        // Buscar al usuario que realizo el pedido de la orden
         const user = await User.findById(req.user.id);
         if (!user) {
-            throw new ErrorResponse('User not found', 404)
+            return next(new ErrorResponse('User not found', 404))
         }
+
+        // Buscar el producto que pidio el usuario en la orden
         const product = await Product.findById(product_id);
-
         if (!product) {
-            throw new ErrorResponse('No product found', 404);
+            return next(new ErrorResponse('Product not found', 404))
         }
-        const user_orders = await Order.find({ user: req.user.id })
-        // Contadores para tipos de pedidos pendientes
-        let pendingBidonOrderCount = 0;
-        let pendingDispenserOrderCount = 0;
 
-        // Verificar los tipos de pedidos pendientes del usuario
-        for (const userOrder of user_orders) {
-            const product = await Product.findById(userOrder.product);
-            if (product.type === 'bidon' && userOrder.status === 'pendiente') {
-                pendingBidonOrderCount++;
-            } else if (product.type === 'dispenser' && userOrder.status === 'pendiente') {
-                pendingDispenserOrderCount++;
+        // Validar que el usuario solo tenga una orden en estado pendiente
+        // Todas las ordenes del usuario
+        const user_orders = await Order.find({ user: req.user.id })
+
+        // Contar los tipos de ordenes que tiene (Solo puede tener una de bidon, y otra de dispenser)
+        let order_drum_pending = 0;
+        let order_dispenser_pending = 0;
+
+        // Contar si el usuario tiene mas de una orden pendiente del mismo tipo
+        for (const user_order of user_orders) {
+            const product_order = await Product.findById(user_order.product);
+            // Si el tipo de producto es bidon y la orden es pendiente, ya tiene una orden con ese tipo
+            if (product_order.type === 'bidon' && user_order.status === 'pendiente') {
+                order_drum_pending++
+            } else if (product_order.type === 'dispenser' && user_order.status === 'pendiente') {
+                order_dispenser_pending++
             }
         }
+
+        // Responder con un error en caso de que alguna de las cuentas anteriores haya sido mayor a 1
         if (product.type === 'bidon') {
-            if (pendingBidonOrderCount >= 1) {
-                throw new ErrorResponse('You already have a pending bidon order.', 400);
+            if (pendingBidonOrderCount > 1) {
+                return next(new ErrorResponse('You already have a requested drum order', 400))
             }
         } else if (product.type === 'dispenser') {
             if (pendingDispenserOrderCount >= 1) {
-                throw new ErrorResponse('You already have a pending dispenser order.', 400);
+                return next(new ErrorResponse('You already have a requested dispenser order', 400))
             }
         }
 
-        if (!req.file) {
-            comprobante = 'No disponible'
-        }
-        if (req.file && payment_method === "Transferencia") {
-            comprobante = file.path
-        }
 
-        if (req.file && payment_method === "Efectivo") {
-            await cloudinary.uploader.destroy(req.file.filename);
-            comprobante = "No disponible"
+        // Variables auxiliares para realizar calculos automaticos
+        let discounted_amount = 0;
+        let total_discounted_amount = 0;
+        let total_without_discount = 0;
+        let proof_of_payment_image = [];
+        let user_balance = 0;
+
+        if (!file) {
+            proof_of_payment_image.push('No disponible')
         }
-        if (user.balance > 0) {
-            user_balance = user.balance
+        if (file && payment_method === "Transferencia") {
+            proof_of_payment_image.push()
+        }
+        if (file && payment_method === "Efectivo") {
+            await cloudinary.uploader.destroy(req.file.filename);
+            proof_of_payment_image.push('No Disponible')
         }
 
         if (promotion_id !== "") {
-
-
+            // Si el cliente es aplicable a una promocion, se gestionara la orden de la sgte manera
             const promotion = await Promotion.findById(promotion_id)
             if (!promotion) {
-                throw new ErrorResponse('Promotion not found', 404)
+                return next(new ErrorResponse('Promotion not found', 404))
             }
 
             if (promotion.required_quantity > quantity) {

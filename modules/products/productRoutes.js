@@ -10,8 +10,11 @@ const upload = multer({ storage: storage })
 const router = express.Router()
 
 router.post('/new_product', upload.single('product-image'), validateNotEmptyFields(['name', 'price', 'type','description']), verifyJwt, isAdmin, newProduct)
+
 router.get('/all_products', verifyJwt, getProducts)
+
 router.put('/update_product/:id',  upload.single('product-image'), validateNotEmptyFields(['name', 'price', 'type', 'description']), verifyJwt, isAdmin, updateProduct)
+
 router.delete('/delete_product/:id', verifyJwt, isAdmin, deleteProduct)
 
 export default router

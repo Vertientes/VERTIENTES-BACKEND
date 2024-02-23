@@ -55,11 +55,11 @@ export const updateUserDataForSecretary = async (req, res, next) => {
         const { first_name, last_name, dni, mobile_phone, neighborhood, street, house_number, zone, location } = req.body
         const user = await User.findById(id)
         if (!user) {
-            return next(new ErrorResponse('User not found', 400))
+            return next(new ErrorResponse('User not found', 404))
         }
-        const updatedUser = await User.findByIdAndUpdate(id, { first_name, last_name, dni, mobile_phone, neighborhood, street, house_number, zone, location })
+        const updatedUser = await User.findByIdAndUpdate(id, { first_name, last_name, dni, mobile_phone, address: { neighborhood, street, house_number, zone, location } }, { new: true })
 
-        res.status(204).json({
+        res.status(200).json({
             success: true,
             updatedUser
         })
@@ -77,7 +77,7 @@ export const updateUserDataForSuperAdmin = async (req, res, next) => {
         if (!user) {
             return next(new ErrorResponse('User not found', 404))
         }
-        const updatedUser = await User.findByIdAndUpdate(id, { first_name, last_name, dni, mobile_phone, neighborhood, street, house_number, zone, location, company_drum, balance }, { new: true })
+        const updatedUser = await User.findByIdAndUpdate(id, { first_name, last_name, dni, mobile_phone, address: { neighborhood, street, house_number, zone, location }, company_drum, balance }, { new: true })
 
         res.status(200).json({
             success: true,
@@ -152,11 +152,11 @@ export const changePassword = async (req, res, next) => {
         const { id } = req.params
         const { old_password, new_password } = req.body
         const dni = req.user.dni
-        const user = await User.findOne({dni})
-        if(!user){
+        const user = await User.findOne({ dni })
+        if (!user) {
             return next(new ErrorResponse('User not found', 404))
         }
-        if(user.is_active === false){
+        if (user.is_active === false) {
             return next(new ErrorResponse('Cannot change password for a disabled user', 400))
         }
         const isMatched = await user.comparePassword(old_password)
@@ -166,7 +166,7 @@ export const changePassword = async (req, res, next) => {
 
         const passwordCrypt = await bcrypt.hash(new_password, 10)
 
-        const updatedUser = await User.findByIdAndUpdate(id, {password: passwordCrypt}, {new: true})
+        const updatedUser = await User.findByIdAndUpdate(id, { password: passwordCrypt }, { new: true })
 
         res.status(200).json({
             success: true,
@@ -176,3 +176,48 @@ export const changePassword = async (req, res, next) => {
         next(error)
     }
 }
+
+// Obtener un usuario a traves del id
+export const getOneUser = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const user = await User.findById(id)
+        if (!user) {
+            return next(new ErrorResponse('User not found', 404))
+        }
+
+        res.status(200).json({
+            success: true,
+            user
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+// Actualizar los datos de direccion del usuario
+export const updateAddressUserData = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const file = req.file
+        const { neighborhood, street, house_number, zone, location } = req.body
+
+        const user = await User.findById(id)
+
+        if (!user) {
+            return next(new ErrorResponse('User not found', 404))
+        }
+
+        let house_img = file ? file.path : user.house_img
+
+        const updatedUser = await User.findByIdAndUpdate(id, { address: { neighborhood, street, house_number, zone, location }, house_img }, { new: true })
+
+        res.status(200).json({
+            success: true,
+            updatedUser
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+

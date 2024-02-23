@@ -10,7 +10,6 @@ import userRoutes from './modules/user/userRoutes.js'
 import orderRoutes from './modules/orders/orderRoutes.js'
 import productRoutes from './modules/products/productRoutes.js'
 import promotionRoutes from './modules/promotion/promotionRoutes.js'
-import visitRoutes from './modules/visits/visitRoutes.js'
 import requestRoutes from './modules/request/requestRoutes.js'
 import deliveryRoutes from './modules/delivery/deliveryRoutes.js'
 import companyRoutes from './modules/company/companyRoutes.js'
@@ -33,7 +32,6 @@ app.use('/api', userRoutes)
 app.use('/api', orderRoutes)
 app.use('/api', productRoutes)
 app.use('/api', promotionRoutes)
-app.use('/api', visitRoutes)
 app.use('/api', requestRoutes)
 app.use('/api', deliveryRoutes)
 app.use('/api', companyRoutes)

@@ -26,19 +26,13 @@ const orderSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
-    extra_payment: {
-        type: Number,
-        required: [true, 'Extra payment is required'],
-        default: 0
-    },
     order_date: {
         type: Date,
-        required: [true, 'order date is required']
+        required: [true, 'Order date is required']
     },
     order_due_date: {
         type: Date,
-
-        required: [true, 'order due date is required']
+        required: [true, 'Order due date is required']
     },
     deliveries: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -52,7 +46,7 @@ const orderSchema = new mongoose.Schema({
     }],
     status: {
         type: String,
-        enum: ['pendiente','en proceso', 'completo'],
+        enum: ['pendiente','en proceso','completo'],
         default: 'pendiente'
     },
     recharges_in_favor: {
