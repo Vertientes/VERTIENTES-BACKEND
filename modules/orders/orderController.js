@@ -13,11 +13,17 @@ export const newOrder = async (req, res, next) => {
         let quantity_number = parseInt(quantity)
         const file = req.file
 
+        // Variables auxiliares para realizar calculos automaticos
+        let discounted_amount = 0;
+        let total_discounted_amount = 0;
+        let total_without_discount = 0;
+        let discounted_quantity = 0
+        let proof_of_payment_image = ''
+
         // Verificar si observation es vacia para asignar un valor por default
         if (observation === "") {
             observation = 'No hay observaciones proporcionadas'
         }
-        console.log(observation)
         // Buscar al usuario que realizo el pedido de la orden
         const user = await User.findById(req.user.id);
         // Verificar que el que crea la orden sea un usuario y no un repartidor u otro role
@@ -48,41 +54,39 @@ export const newOrder = async (req, res, next) => {
         for (const user_order of user_orders) {
             const product_order = await Product.findById(user_order.product);
             // Buscamos el producto de la orden, si coincide con bidon y la orden esta pendiente incrementamos
-            if (product_order.type === 'bidon' && user_order.status === 'pendiente') {
+            if ((product_order.type === 'bidon' && user_order.status === 'pendiente') || (product_order.type === 'bidon' && user_order.status === 'en proceso')) {
                 order_drum_pending++
 
                 // Buscamos el producto de la orden, si coincide con dispenser y la orden esta pendiente incrementamos
-            } else if (product_order.type === 'dispenser' && user_order.status === 'pendiente') {
+            } else if ((product_order.type === 'dispenser' && user_order.status === 'pendiente') || (product_order.type === 'dispenser' && user_order.status === 'en proceso')) {
                 order_dispenser_pending++
             }
         }
         if (product.type === 'bidon') {
             // Comprobar si tiene una orden en proceso con el producto bidon
             if (order_drum_pending >= 1) {
-                return next(new ErrorResponse('You already have a pending drum order', 400))
+                return next(new ErrorResponse('You already have a pending or in process drum order', 400))
             }
         } else if (product.type === 'dispenser') {
             // Comprobar si tiene una orden en proceso con el producto dispenser
             if (order_dispenser_pending >= 1) {
-                return next(new ErrorResponse('You already have a pending dispenser order', 400))
+                return next(new ErrorResponse('You already have a pending or in process dispenser order', 400))
             }
         }
-
-
-        // Variables auxiliares para realizar calculos automaticos
-        let discounted_amount = 0;
-        let total_discounted_amount = 0;
-        let total_without_discount = 0;
-        let proof_of_payment_image = [];
-        let user_balance = 0;
-
+        if (payment_method === 'Efectivo' && file) {
+            await cloudinary.uploader.destroy(req.file.filename);
+            return next(new ErrorResponse('You cannot send a receipt when the payment method is cash', 400))
+        }
+        else if (payment_method === 'Transferencia' && !file) {
+            return next(new ErrorResponse('Comprobant is required', 400))
+        }
         // Comprobamos si no se mando la imagen de comprobante de pago
         if (!file) {
-            proof_of_payment_image.push('No disponible')
+            proof_of_payment_image = 'No disponible'
         }
         // Si se mando imagen se guarda en el array de comprobantes de pago el link a cloudinary
         else if (file) {
-            proof_of_payment_image.push(file.path)
+            proof_of_payment_image = file.path
         }
 
         // Logica para agregar la orden a la base de datos en caso de que el producto sea bidon, y haya una promocion
@@ -104,6 +108,21 @@ export const newOrder = async (req, res, next) => {
             // Calculamos el monto con el descuento aplicado
             total_discounted_amount = total_without_discount - discounted_amount
 
+            // Descontar el balance del usuario en caso de que se pueda
+            if (user.balance > total_discounted_amount) {
+                total_discounted_amount = 0
+                discounted_quantity = user.balance + discounted_amount
+                user.balance = user.balance - total_discounted_amount
+                await user.save()
+            }
+            else if (user.balance > 0 && user.balance < total_without_discount) {
+                total_discounted_amount = total_discounted_amount - user.balance
+                discounted_quantity = user.balance + discounted_amount
+                user.balance = 0
+                await user.save()
+            }
+
+
             // Agregamos la orden a la base de datos con el descuento aplicado
             const newOrder = new Order({
                 user: user.id,
@@ -115,7 +134,8 @@ export const newOrder = async (req, res, next) => {
                 order_date: getCurrentISODate(),
                 order_due_date: getDateNextMonthISO(),
                 observation,
-                total_amount: total_discounted_amount - user.balance
+                discounted_quantity,
+                total_amount: total_discounted_amount
             });
 
             // Guardamos la orden en la base de datos
@@ -125,12 +145,27 @@ export const newOrder = async (req, res, next) => {
             res.status(201).json({
                 success: true,
                 savedOrder,
-                discounted_quantity: user_balance
             });
         }
 
         // Agregar la orden a la base de datos, en caso de que no aplique a ninguna promocion y el producto sea bidon
         else if (promotion_id == "" && product.type === 'bidon') {
+
+            total_without_discount = product.price * quantity_number
+
+            // Descontar balance del usuario
+            if (user.balance > total_without_discount) {
+                total_without_discount = 0
+                discounted_quantity = user.balance
+                user.balance = user.balance - total_without_discount
+                await user.save()
+            }
+            else if (user.balance > 0 && user.balance < total_without_discount) {
+                total_without_discount = total_without_discount - user.balance
+                discounted_quantity = user.balance
+                user.balance = 0
+                await user.save()
+            }
             const newOrder = new Order({
                 user: user.id,
                 product: product_id,
@@ -141,7 +176,8 @@ export const newOrder = async (req, res, next) => {
                 order_date: getCurrentISODate(),
                 order_due_date: getDateNextMonthISO(),
                 observation,
-                total_amount: (product.price * quantity_number) - user.balance
+                discounted_quantity,
+                total_amount: total_without_discount
             });
 
             // Guardamos la orden en la base de datos
@@ -151,12 +187,26 @@ export const newOrder = async (req, res, next) => {
             res.status(201).json({
                 success: true,
                 savedOrder,
-                discounted_quantity: user_balance
+                discounted_quantity
             });
         }
 
         // Agregar una nueva orden a la base de datos en caso del que producto sea dispenser
         else if (product.type === 'dispenser') {
+
+            total_without_discount = product.price * quantity_number
+            if (user.balance > total_without_discount) {
+                total_without_discount = 0
+                discounted_quantity = user.balance
+                user.balance = user.balance - total_without_discount
+                await user.save()
+            }
+            else if (user.balance > 0 && user.balance < total_without_discount) {
+                total_without_discount = total_without_discount - user.balance
+                discounted_quantity = user.balance
+                user.balance = 0
+                await user.save()
+            }
             const newOrder = new Order({
                 user: user.id,
                 product: product_id,
@@ -167,7 +217,8 @@ export const newOrder = async (req, res, next) => {
                 order_date: getCurrentISODate(),
                 order_due_date: getDateNextMonthISO(),
                 observation,
-                total_amount: (product.price * quantity_number) - user.balance
+                discounted_quantity,
+                total_amount: total_without_discount
             });
 
             // Guardamos la orden en la base de datos
@@ -176,8 +227,7 @@ export const newOrder = async (req, res, next) => {
 
             res.status(201).json({
                 success: true,
-                savedOrder,
-                discounted_quantity: user_balance
+                savedOrder
             });
         }
     }
@@ -447,28 +497,15 @@ export const updateOrderData = async (req, res, next) => {
 export const renewOrder = async (req, res, next) => {
     try {
         const { id } = req.params
-        const { quantity, promotion_id, payment_method, product_id, observation } = req.body
+        let { quantity, promotion_id, payment_method, product_id, observation } = req.body
+        const file = req.file
         let quantity_number = parseInt(quantity)
         // Variables auxiliares para realizar calculos automaticos
         let discounted_amount = 0
         let total_discounted_amount = 0;
         let total_without_discount = 0;
-        let user_balance = 0;
-
-
-        // Calculamos el monto sin la promocion
-        total_without_discount = product.price * quantity_number
-        // Calculamos el descuento
-        discounted_amount = (total_without_discount * discount_percentage) / 100;
-        // Calculamos el monto con el descuento aplicado
-        total_discounted_amount = total_without_discount - discounted_amount;
-
-        const file = req.file
-
-        // Verificar si observation es vacia para asignar un valor por default
-        if (observation === "") {
-            observation = 'No hay observaciones proporcionadas'
-        }
+        let discounted_quantity = 0;
+        let proof_of_payment_image = ''
 
         // Buscar al usuario que realizo el pedido de la orden
         const user = await User.findById(req.user.id);
@@ -484,21 +521,33 @@ export const renewOrder = async (req, res, next) => {
         if (!order) {
             return next(new ErrorResponse('Order not found', 404))
         }
-        let proof_of_payment_image = [...order.proof_of_payment_image];
         // Buscar el producto que pidio el usuario en la orden
         const product = await Product.findById(product_id);
         if (!product) {
             return next(new ErrorResponse('Product not found', 404))
         }
 
+        if (payment_method === 'Efectivo' && file) {
+            await cloudinary.uploader.destroy(req.file.filename);
+            return next(new ErrorResponse('You cannot send a receipt when the payment method is cash', 400))
+        }
+        else if (payment_method === 'Transferencia' && !file) {
+            return next(new ErrorResponse('Comprobant is required', 400))
+        }
         // Comprobamos si no se mando la imagen de comprobante de pago
         if (!file) {
-            proof_of_payment_image.push('No disponible')
+            proof_of_payment_image = 'No disponible'
         }
         // Si se mando imagen se guarda en el array de comprobantes de pago el link a cloudinary
         else if (file) {
-            proof_of_payment_image.push(file.path)
+            proof_of_payment_image = file.path
         }
+
+        // Verificar si observation es vacia para asignar un valor por default
+        if (observation === "") {
+            observation = 'No hay observaciones proporcionadas'
+        }
+
         // Comprobamos si el usuario aplico a una promocion
         if (promotion_id !== "" && product.type === 'bidon') {
             const promotion = await Promotion.findById(promotion_id)
@@ -508,16 +557,34 @@ export const renewOrder = async (req, res, next) => {
             if (promotion.required_quantity > quantity_number) {
                 throw new ErrorResponse('Promotion is not applicable', 400)
             }
+            // Calculamos el monto sin la promocion
+            total_without_discount = product.price * quantity_number
+            // Calculamos el descuento
+            discounted_amount = (total_without_discount * promotion.discounted_percentage) / 100;
+            // Calculamos el monto con el descuento aplicado
+            total_discounted_amount = total_without_discount - discounted_amount;
 
+            // Descontar el balance del usuario
+            if (user.balance > total_discounted_amount) {
+                total_discounted_amount = 0
+                discounted_quantity = user.balance + discounted_amount
+                user.balance = user.balance - total_discounted_amount
+                await user.save()
+            }
+            else if (user.balance > 0 && user.balance < total_without_discount) {
+                total_discounted_amount = total_discounted_amount - user.balance
+                discounted_quantity = user.balance + discounted_amount
+                user.balance = 0
+                await user.save()
+            }
 
             // Validacion para saber si puede renovar la orden
             if (order.amount_paid >= order.total_amount && order.recharges_in_favor > 1) {
-                const updatedOrder = await Order.findByIdAndUpdate(id, { user: user.id, product: product_id, quantity: order.quantity + quantity, promotion: promotion_id, payment_method, proof_of_payment_image, order_date: getCurrentISODate(), order_due_date: getDateNextMonthISO(), observation, status: 'pendiente', recharges_delivered: order.recharges_delivered, total_amount: total_discounted_amount })
+                const updatedOrder = await Order.findByIdAndUpdate(id, { user: user.id, product: product_id, quantity: parseInt(quantity), promotion: promotion_id, payment_method, proof_of_payment_image, amount_paid: 0, order_date: getCurrentISODate(), order_due_date: getDateNextMonthISO(), observation, status: 'pendiente', recharges_delivered: order.recharges_delivered, discounted_quantity, is_renewed: true, total_amount: total_discounted_amount }, { new: true })
                 // Respondemos con la orden ya creada, con su promocion aplicada
                 res.status(201).json({
                     success: true,
                     updatedOrder,
-                    discounted_quantity: user_balance
                 });
             }
             else {
@@ -529,31 +596,29 @@ export const renewOrder = async (req, res, next) => {
 
         // Actualizar la orden a la base de datos, en caso de que no aplique a ninguna promocion y el producto sea bidon
         else if (promotion_id == "" && product.type === 'bidon') {
-            // Validacion para saber si puede renovar la orden
-            if (order.amount_paid >= order.total_amount && order.recharges_in_favor > 0) {
-                const updatedOrder = await Order.findByIdAndUpdate(id, { user: user.id, product: product_id, promotion: promotion_id, payment_method, proof_of_payment_image, order_date: getCurrentISODate(), order_due_date: getDateNextMonthISO(), observation, status: 'pendiente', recharges_delivered: order.recharges_delivered, total_amount: total_without_discount })
-                // Respondemos con la orden ya creada, con su promocion aplicada
-                res.status(201).json({
-                    success: true,
-                    updatedOrder,
-                    discounted_quantity: user_balance
-                });
-            }
-            else {
-                return next(new ErrorResponse('You cannot request to renew the order.', 400))
-            }
-        }
+            // Calculamos el monto sin la promocion
+            total_without_discount = (product.price * quantity_number)
 
-        // Agregar una nueva orden a la base de datos en caso del que producto sea dispenser
-        else if (product.type === 'dispenser') {
+            // Descontar el balance del usuario
+            if (user.balance > total_without_discount) {
+                total_without_discount = 0
+                discounted_quantity = user.balance
+                user.balance = user.balance - total_without_discount
+                await user.save()
+            }
+            else if (user.balance > 0 && user.balance < total_without_discount) {
+                total_without_discount = total_without_discount - user.balance
+                discounted_quantity = user.balance
+                user.balance = 0
+                await user.save()
+            }
             // Validacion para saber si puede renovar la orden
             if (order.amount_paid >= order.total_amount && order.recharges_in_favor > 0) {
-                const updatedOrder = await Order.findByIdAndUpdate(id, { user: user.id, product: product_id, promotion: promotion_id, payment_method, proof_of_payment_image, order_date: getCurrentISODate(), order_due_date: getDateNextMonthISO(), observation, status: 'pendiente', recharges_delivered: order.recharges_delivered, total_amount: total_without_discount })
+                const updatedOrder = await Order.findByIdAndUpdate(id, { user: user.id, product: product_id, quantity: parseInt(quantity), promotion: promotion_id, payment_method, proof_of_payment_image, amount_paid: 0, order_date: getCurrentISODate(), order_due_date: getDateNextMonthISO(), observation, status: 'pendiente', recharges_delivered: order.recharges_delivered, discounted_quantity, is_renewed: true, total_amount: total_without_discount }, { new: true })
                 // Respondemos con la orden ya creada, con su promocion aplicada
                 res.status(201).json({
                     success: true,
                     updatedOrder,
-                    discounted_quantity: user_balance
                 });
             }
             else {

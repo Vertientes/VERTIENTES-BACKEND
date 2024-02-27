@@ -1,7 +1,7 @@
 import express from 'express'
 import { verifyJwt } from '../../middlewares/verifyJwt.js'
 import { isAdmin } from '../../middlewares/isAdmin.js'
-import { activateUser, changePassword, changeUserRoleWithPlan, deactivateUser, getAllUsers, getOneUser, getUsersActive, updateAddressUserData, updateUserDataForSuperAdmin, userProfile } from './userController.js'
+import { activateUser, changePassword, changeUserRole, deactivateUser, getAllUsers, getOneUser, getUsersActive, updateAddressUserData, updateUserDataForSuperAdmin, userProfile } from './userController.js'
 import { validateNotEmptyFields } from '../../middlewares/validateNotEmptyFields.js'
 import { isSuperAdmin } from '../../middlewares/isSuperAdmin.js'
 import { isDelivery } from '../../middlewares/isDelivery.js'
@@ -21,7 +21,7 @@ router.get('/user_profile', verifyJwt, userProfile)
 
 router.get('/one_user/:id', verifyJwt, isDelivery, getOneUser)
 
-router.put('/change_user_with_plan/:id', verifyJwt, isSuperAdmin, changeUserRoleWithPlan)
+router.put('/change_user_with_plan/:id', verifyJwt, isSuperAdmin, changeUserRole)
 
 router.put('/deactivate_user/:id', verifyJwt, isSuperAdmin, deactivateUser)
 

@@ -57,6 +57,9 @@ export const updateUserDataForSuperAdmin = async (req, res, next) => {
         if (!user) {
             return next(new ErrorResponse('User not found', 404))
         }
+        if(balance < 0){
+            return next(new ErrorResponse('The balance must be greater than 0', 400))
+        }
         const updatedUser = await User.findByIdAndUpdate(id, { first_name, last_name, dni, mobile_phone, address: { neighborhood, street, house_number, zone, location }, company_drum, balance }, { new: true })
 
         res.status(200).json({
@@ -69,10 +72,13 @@ export const updateUserDataForSuperAdmin = async (req, res, next) => {
 }
 
 // Actualizar el rol de un usuario a un usuario con abono, el super admin ejecuta esto
-export const changeUserRoleWithPlan = async (req, res, next) => {
+export const changeUserRole = async (req, res, next) => {
     try {
         const { id } = req.params
-        const role = 'user_with_plan'
+        const { role } = req.body
+        if(role != 'user' || role!= 'user_with_plan'){
+            return next(new ErrorResponse('Role dont exsits'))
+        }
         const user = await User.findById(id)
         if (!user) {
             return next(new ErrorResponse('user not found', 404))

@@ -46,7 +46,7 @@ const orderSchema = new mongoose.Schema({
     }],
     status: {
         type: String,
-        enum: ['pendiente','en proceso','completo'],
+        enum: ['pendiente', 'en proceso', 'completo'],
         default: 'pendiente'
     },
     recharges_in_favor: {
@@ -59,10 +59,10 @@ const orderSchema = new mongoose.Schema({
         required: [true, 'Recharges delivered is required'],
         default: 0
     },
-    proof_of_payment_image: [{
+    proof_of_payment_image: {
         type: String,
         required: false
-    }],
+    },
     promotion: {
         type: mongoose.Schema.Types.Mixed,
         ref: 'Promotion',
@@ -72,7 +72,16 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Observation is required'],
     },
+    is_renewed: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
     total_amount: {
+        type: Number,
+        required: true
+    },
+    discounted_quantity: {
         type: Number,
         required: true
     }

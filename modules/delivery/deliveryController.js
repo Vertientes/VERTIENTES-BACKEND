@@ -186,7 +186,7 @@ export const updateDeliveryData = async (req, res, next) => {
                 order.amount_paid = amount_paid
                 order.recharges_delivered = recharges_delivered
                 order.extra_payment = amount_paid - order.total_amount
-                order.recharges_in_favor = order.quantity - recharges_delivered
+                order.recharges_in_favor = order.recharges_in_favor + (order.quantity - recharges_delivered)
                 await order.save()
 
                 //Datos del usuario
