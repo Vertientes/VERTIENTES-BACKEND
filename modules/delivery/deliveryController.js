@@ -12,30 +12,31 @@ export const newDelivery = async (req, res, next) => {
         if (!order) {
             throw new ErrorResponse('Order not found', 404);
         }
-
         const user = await User.findById(order.user);
+
+        // Si la orden esta completa o ya fue entregada no se puede aniadir a delivery
         if (order.status === 'completo' || (order.recharges_in_favor <= 0 && order.recharges_delivered > 0)) {
             throw new ErrorResponse('The order cant add to delivery', 400);
         }
 
 
-        // Obtener las coordenadas del usuario y convertirlas a un array de números
-        const locationString = user.address.location;
-        const coordinates = locationString.split(',').map(coord => parseFloat(coord.trim()));
+        // Obtener las coordenadas del usuario
+        const location = user.address.location;
 
         const newDelivery = new Delivery({
             order: order.id,
             delivery_date,
             delivery_zone: user.address.zone,
-            delivery_location: {
-                type: 'Point',
-                coordinates: coordinates // Utiliza las coordenadas convertidas en un array de números
-            }
+            delivery_location: location
         });
 
         const savedDelivery = await newDelivery.save();
+
+        // Guardar el delivery en la orden
         order.deliveries.push(savedDelivery.id);
         await order.save();
+
+        // Cambiar el estado de la orden
         order.status = 'en proceso';
         await order.save();
 
@@ -148,97 +149,90 @@ export const getDeliveriesForGeneral = async (req, res, next) => {
 
 
 
-//Controlador para realizar un reparto
 export const updateDeliveryData = async (req, res, next) => {
     try {
-        const { id } = req.params
-        const { order_id, amount_paid, recharges_delivered, returned_drums, debt } = req.body
-        const delivery = await Delivery.findById(id)
-        const order = await Order.findById(order_id)
-        const user = await User.findById(order.user)
-        if(delivery.status === 'entregado'){
-            throw new ErrorResponse('Cant update delivered delivery', 400)
-        }
-        if (order.deliveries.length > 0) {
-            if (user.balance < 0) {
-                order.amount_paid = order.amount_paid + debt
-                user.balance = user.balance + debt
-                await order.save()
-                await user.save()
-            }
-            order.amount_paid = order.amount_paid,
-            order.recharges_delivered = order.recharges_delivered + recharges_delivered
-            order.recharges_in_favor = order.recharges_in_favor - recharges_delivered
-            await order.save()
-            user.company_drum = user.company_drum + (recharges_delivered - returned_drums)
-            await user.save()
+        const { id } = req.params;
+        let { order_id, amount_paid, recharges_delivered, returned_drums } = req.body;
+        const delivery = await Delivery.findById(id);
+        const order = await Order.findById(order_id);
+        const user = await User.findById(order.user);
 
-            //Si despues de todas las operaciones realizadas cumple con la sgte validacion, la orden sera completada
-            if(order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount){
-                order.status = 'completo'
-                await order.save()
+        if (delivery.status === 'entregado') {
+            throw new ErrorResponse('No se puede actualizar una entrega ya realizada', 400);
+        }
+
+        if (order.deliveries.length > 1 && recharges_delivered > 0) {
+            // Manejar pago superior al monto total
+            const extraPayment = amount_paid - order.total_amount;
+            if (extraPayment > 0) {
+                user.balance += extraPayment;
             }
-            delivery.status = 'entregado'
-            await delivery.save()
+
+            // Actualizar datos del delivery
+            delivery.amount_paid = amount_paid;
+            delivery.recharges_delivered = recharges_delivered;
+            delivery.returned_drums = returned_drums;
+
+            // Actualizar datos de la orden
+            order.amount_paid += amount_paid;
+            order.recharges_delivered += recharges_delivered;
+            order.recharges_in_favor -= recharges_delivered;
+            await order.save();
+
+            // Actualizar datos del usuario
+            user.company_drum += (recharges_delivered - returned_drums);
+            await user.save();
+
+            // Completar la orden si es necesario
+            if (order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount) {
+                order.status = 'completo';
+                await order.save();
+            }
+        } else if (recharges_delivered > 0) {
+            // Actualizar datos del delivery
+            delivery.amount_paid = amount_paid;
+            delivery.recharges_delivered = recharges_delivered;
+            delivery.returned_drums = returned_drums;
+
+            // Actualizar datos de la orden
+            order.amount_paid = amount_paid;
+            order.recharges_delivered = recharges_delivered;
+            order.recharges_in_favor -= recharges_delivered; // Asegurar que no sea nulo
+            await order.save();
+
+            // Actualizar datos del usuario
+            user.company_drum = recharges_delivered;
+            await user.save();
+
+            // Completar la orden si es necesario
+            if (order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount) {
+                order.status = 'completo';
+                await order.save();
+            }
         } else {
-            if (amount_paid > order.total_amount) {
-                //Datos de la orden
-                order.amount_paid = amount_paid
-                order.recharges_delivered = recharges_delivered
-                order.extra_payment = amount_paid - order.total_amount
-                order.recharges_in_favor = order.recharges_in_favor + (order.quantity - recharges_delivered)
-                await order.save()
-
-                //Datos del usuario
-                user.company_drum = recharges_delivered
-                user.balance = user.balance + order.extra_payment
-                await user.save()
-
-                //Si despues de todas las operaciones realizadas cumple con la sgte validacion, la orden sera completada
-                if(order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount){
-                    order.status = 'completo'
-                    await order.save()
-                }
-            }
-            else {
-
-                //Datos de la orden
-                order.amount_paid = amount_paid
-                order.recharges_delivered = recharges_delivered
-                order.extra_payment = 0
-                order.recharges_in_favor = order.quantity - recharges_delivered
-                await order.save()
-
-                //Datos del usuario
-                user.company_drum = recharges_delivered
-                user.balance = (user.balance + amount_paid) - order.total_amount
-                await user.save()
-
-                //Si despues de todas las operaciones realizadas cumple con la sgte validacion, la orden sera completada
-                if(order.recharges_in_favor === 0 && order.amount_paid >= order.total_amount){
-                    order.status = 'completo'
-                    await order.save()
-                }
-            }
-            delivery.status = 'entregado'
-            await delivery.save()
+            throw new ErrorResponse('No se puede realizar una entrega sin recargas entregadas', 400);
         }
+
+        // Marcar la entrega como completada
+        delivery.status = 'entregado';
+        await delivery.save();
 
         res.status(200).json({
             success: true,
             order,
             delivery
-        })
+        });
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
+
 
 
 //Controlador para el repartidor, por si necesita editar datos del cliente
 export const updateAddressUserData = async (req, res, next) => {
     try {
-        
+
     } catch (error) {
         next(error)
     }

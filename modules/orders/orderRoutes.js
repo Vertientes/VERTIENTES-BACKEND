@@ -24,7 +24,7 @@ router.get('/all_in_process_orders', verifyJwt, isAdminOrSuperAdmin, getAllOrder
 
 router.get('/all_completed_orders', verifyJwt, isAdminOrSuperAdmin, getAllOrdersCompleted)
 
-router.put('/update_order_data/:id', validateNotEmptyFields(['amount_paid', 'recharges_in_favor', 'recharges_delivered',]), verifyJwt, isAdminOrSuperAdmin, updateOrderData)
+router.put('/update_order_data_for_admin/:id', validateNotEmptyFields(['amount_paid', 'recharges_in_favor', 'recharges_delivered',]), verifyJwt, isAdminOrSuperAdmin, updateOrderData)
 
 router.put('/renew_order/:id', upload.single('proof_of_payment_image'), validateNotEmptyFields(['quantity', 'product_id', 'payment_method', 'product_id']), verifyJwt, renewOrder)
 

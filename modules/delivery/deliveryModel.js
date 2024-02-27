@@ -22,15 +22,23 @@ const deliverySchema = new mongoose.Schema({
         required: [true, 'Please add a delivery date'],
     },
     delivery_location: {
-        type: {
-            type: String,
-            enum: ['Point'], // Solo permitir el tipo 'Point'
-            required: true
-        },
-        coordinates: {
-            type: [Number], // Array de números para latitud y longitud
-            required: true
-        }
+        type: String,
+        required: true
+    },
+    amount_paid: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+    recharges_delivered: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    returned_drums: {
+        type: Number,
+        required: true,
+        default: 0
     }
 
 }, { timestamps: true });

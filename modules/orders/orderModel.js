@@ -62,7 +62,7 @@ const orderSchema = new mongoose.Schema({
     proof_of_payment_image: {
         type: String,
         required: false
-    },
+    }, 
     promotion: {
         type: mongoose.Schema.Types.Mixed,
         ref: 'Promotion',

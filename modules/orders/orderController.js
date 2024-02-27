@@ -30,6 +30,9 @@ export const newOrder = async (req, res, next) => {
         if (user.role !== 'user') {
             return next(new ErrorResponse('Only customers can request orders', 400))
         }
+        if (user.balance < 0) {
+            return next(new ErrorResponse('You cant request order', 400))
+        }
         if (!user) {
             return next(new ErrorResponse('User not found', 404))
         }
@@ -129,6 +132,7 @@ export const newOrder = async (req, res, next) => {
                 product: product_id,
                 promotion: promotion_id,
                 quantity: quantity_number,
+                recharges_in_favor: quantity_number,
                 payment_method,
                 proof_of_payment_image,
                 order_date: getCurrentISODate(),
@@ -172,6 +176,7 @@ export const newOrder = async (req, res, next) => {
                 promotion: null,
                 quantity,
                 payment_method,
+                recharges_in_favor: quantity_number,
                 proof_of_payment_image,
                 order_date: getCurrentISODate(),
                 order_due_date: getDateNextMonthISO(),
@@ -580,7 +585,7 @@ export const renewOrder = async (req, res, next) => {
 
             // Validacion para saber si puede renovar la orden
             if (order.amount_paid >= order.total_amount && order.recharges_in_favor > 1) {
-                const updatedOrder = await Order.findByIdAndUpdate(id, { user: user.id, product: product_id, quantity: parseInt(quantity), promotion: promotion_id, payment_method, proof_of_payment_image, amount_paid: 0, order_date: getCurrentISODate(), order_due_date: getDateNextMonthISO(), observation, status: 'pendiente', recharges_delivered: order.recharges_delivered, discounted_quantity, is_renewed: true, total_amount: total_discounted_amount }, { new: true })
+                const updatedOrder = await Order.findByIdAndUpdate(id, { user: user.id, product: product_id, quantity: parseInt(quantity), promotion: promotion_id, payment_method, proof_of_payment_image, amount_paid: 0, order_date: getCurrentISODate(), order_due_date: getDateNextMonthISO(), observation, status: 'pendiente', recharges_delivered: order.recharges_delivered, recharges_in_favor: order.recharges_in_favor + quantity_number, discounted_quantity, is_renewed: true, total_amount: total_discounted_amount }, { new: true })
                 // Respondemos con la orden ya creada, con su promocion aplicada
                 res.status(201).json({
                     success: true,
@@ -614,7 +619,7 @@ export const renewOrder = async (req, res, next) => {
             }
             // Validacion para saber si puede renovar la orden
             if (order.amount_paid >= order.total_amount && order.recharges_in_favor > 0) {
-                const updatedOrder = await Order.findByIdAndUpdate(id, { user: user.id, product: product_id, quantity: parseInt(quantity), promotion: promotion_id, payment_method, proof_of_payment_image, amount_paid: 0, order_date: getCurrentISODate(), order_due_date: getDateNextMonthISO(), observation, status: 'pendiente', recharges_delivered: order.recharges_delivered, discounted_quantity, is_renewed: true, total_amount: total_without_discount }, { new: true })
+                const updatedOrder = await Order.findByIdAndUpdate(id, { user: user.id, product: product_id, quantity: parseInt(quantity), promotion: promotion_id, payment_method, proof_of_payment_image, amount_paid: 0, order_date: getCurrentISODate(), order_due_date: getDateNextMonthISO(), observation, status: 'pendiente', recharges_delivered: order.recharges_delivered, recharges_in_favor: order.recharges_in_favor + quantity_number, discounted_quantity, is_renewed: true, total_amount: total_without_discount }, { new: true })
                 // Respondemos con la orden ya creada, con su promocion aplicada
                 res.status(201).json({
                     success: true,
@@ -629,36 +634,4 @@ export const renewOrder = async (req, res, next) => {
     catch (error) {
         next(error);
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-export const changeOrderStatus = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const { status } = req.body;
-        if (!status) {
-            return next(new ErrorResponse('Please add a status', 400))
-        }
-
-        const updateOrder = await Order.findByIdAndUpdate(id, { status }, { new: true })
-        res.status(200).json({
-            success: true,
-            updateOrder
-        })
-    } catch (error) {
-        next(error)
-    }
-}
-
-export const requestRecharge = async (req, res, next) => {
-
 }

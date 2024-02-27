@@ -9,7 +9,7 @@ export const dbConnect = async () => {
         } */)
         console.log('Db connect on ', mongoose.connection.host)
     } catch (error) {
-        console.log('Database error')
+        console.log('Database error', error)
     }
 
 }
